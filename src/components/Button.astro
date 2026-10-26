@@ -1,0 +1,25 @@
+---
+import { withBase } from "../lib/paths";
+
+interface Props {
+  href: string;
+  variant?: "primary" | "secondary";
+}
+
+const { href, variant = "primary" } = Astro.props;
+const external = /^https?:/i.test(href);
+const classes =
+  variant === "primary"
+    ? "bg-gold text-gold-ink hover:bg-[#ffe09a]"
+    : "border border-line text-ink hover:border-gold";
+---
+
+<a
+  href={external ? href : withBase(href)}
+  class:list={[
+    "inline-flex items-center justify-center px-5 py-3 text-sm font-medium tracking-wide rounded-sm",
+    classes,
+  ]}
+>
+  <slot />
+</a>

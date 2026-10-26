@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: Fredoka;
+  src: url("../fonts/Fredoka-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Outfit;
+  src: url("../fonts/Outfit-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Outfit;
+  src: url("../fonts/Outfit-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Outfit;
+  src: url("../fonts/Outfit-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("../fonts/PlexMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("../fonts/PlexMono-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-display: Fredoka, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: Outfit, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-bg: #070b12;
+  --color-raised: #101826;
+  --color-ink: #f4f1ea;
+  --color-muted: #c5cedc;
+  --color-faint: #9aa6ba;
+  --color-line: rgba(244, 241, 234, 0.14);
+  --color-gold: #f5c96b;
+  --color-gold-ink: #1c1408;
+}
+
+html {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-gold-ink);
+}
+
+summary {
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+.article {
+  max-width: 40rem;
+}
+
+.article > * + * {
+  margin-top: 1.25rem;
+}
+
+.article h2,
+.article h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  margin-top: 2.5rem;
+}
+
+.article h2 {
+  font-size: 1.75rem;
+}
+
+.article h3 {
+  font-size: 1.35rem;
+}
+
+.article p,
+.article li {
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+
+.article a {
+  color: var(--color-gold);
+  text-underline-offset: 0.2em;
+}
+
+.article ul,
+.article ol {
+  padding-left: 1.25rem;
+}
+
+.article img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--color-line);
+}
+
+.article code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--color-ink);
+}
+
+.article pre {
+  overflow-x: auto;
+  padding: 1rem;
+  background: var(--color-raised);
+  border: 1px solid var(--color-line);
+}
+
+.article pre code {
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

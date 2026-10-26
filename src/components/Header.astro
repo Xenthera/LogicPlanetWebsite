@@ -1,0 +1,73 @@
+---
+import { site } from "../data/site";
+import { navigation } from "../data/navigation";
+import { withBase } from "../lib/paths";
+
+const current = Astro.url.pathname.replace(/\/$/, "") || "/";
+
+function isCurrent(href: string) {
+  const path = withBase(href).replace(/\/$/, "") || "/";
+  return current === path || current.endsWith(href);
+}
+---
+
+<header class="border-b border-line">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
+    <a href={withBase("/")} class="flex items-center gap-3 rounded-sm">
+      <img src={withBase("/brand/mark.png")} alt="" width="40" height="40" class="h-10 w-10" />
+      <span class="font-display text-xl tracking-tight">{site.name}</span>
+    </a>
+
+    <nav class="hidden items-center gap-8 md:flex" aria-label="Primary">
+      {
+        navigation.map((item) => (
+          <a
+            href={withBase(item.href)}
+            aria-current={isCurrent(item.href) ? "page" : undefined}
+            class:list={[
+              "text-sm text-muted hover:text-ink",
+              isCurrent(item.href) && "text-ink",
+            ]}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+      <a
+        href={site.download}
+        class="bg-gold px-4 py-2 text-sm font-medium text-gold-ink rounded-sm hover:bg-[#ffe09a]"
+      >
+        Download
+      </a>
+    </nav>
+
+    <details class="relative md:hidden">
+      <summary class="cursor-pointer px-3 py-2 text-sm text-ink">Menu</summary>
+      <nav
+        class="absolute right-0 z-10 mt-2 w-52 border border-line bg-bg p-3"
+        aria-label="Primary"
+      >
+        <ul class="m-0 flex list-none flex-col gap-1 p-0">
+          {
+            navigation.map((item) => (
+              <li>
+                <a
+                  href={withBase(item.href)}
+                  aria-current={isCurrent(item.href) ? "page" : undefined}
+                  class="block px-2 py-2 text-sm text-muted hover:text-ink"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+          <li>
+            <a href={site.download} class="block px-2 py-2 text-sm text-gold">
+              Download
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </details>
+  </div>
+</header>

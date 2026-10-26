@@ -1,0 +1,24 @@
+---
+import { site } from "../data/site";
+import { navigation } from "../data/navigation";
+import { withBase } from "../lib/paths";
+---
+
+<footer class="mt-24 border-t border-line">
+  <div class="mx-auto grid max-w-6xl gap-10 px-5 py-12 md:grid-cols-[1.4fr_1fr]">
+    <div>
+      <p class="m-0 font-display text-2xl">{site.name}</p>
+      <p class="mt-3 max-w-sm text-sm leading-6 text-muted">{site.tagline}</p>
+    </div>
+    <nav aria-label="Footer" class="flex flex-col gap-2 text-sm">
+      {
+        navigation.map((item) => (
+          <a href={withBase(item.href)} class="text-muted hover:text-ink">
+            {item.label}
+          </a>
+        ))
+      }
+      <a href={site.download} class="text-muted hover:text-ink">Download</a>
+    </nav>
+  </div>
+</footer>

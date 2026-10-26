@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://xenthera.github.io/LogicPlanetWebsite/sitemap-index.xml
