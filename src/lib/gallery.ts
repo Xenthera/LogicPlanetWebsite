@@ -1,5 +1,6 @@
 import type { ImageMetadata } from "astro";
 import { getCollection } from "astro:content";
+import { pictureOf } from "./picture";
 
 const files = import.meta.glob("../content/gallery/*.{png,jpg,jpeg,webp,gif,avif}", {
   eager: true,
@@ -8,6 +9,8 @@ const files = import.meta.glob("../content/gallery/*.{png,jpg,jpeg,webp,gif,avif
 
 export type GalleryShot = {
   src: string;
+  srcset?: string;
+  full: string;
   width: number;
   height: number;
   alt: string;
@@ -31,26 +34,30 @@ function titleFrom(name: string): string {
 export async function loadGallery(): Promise<GalleryShot[]> {
   const notes = await getCollection("gallery");
   const byStem = new Map(notes.map((note) => [stemOf(note.id), note]));
-  const found: { name: string; shot: GalleryShot }[] = [];
-
-  for (const [path, image] of Object.entries(files)) {
-    if (!image?.src || !image.width || !image.height) continue;
-    const stem = stemOf(path);
-    const note = byStem.get(stem);
-    const title = note?.data.title || titleFrom(stem);
-    found.push({
-      name: stem,
-      shot: {
-        src: image.src,
-        width: image.width,
-        height: image.height,
-        alt: note?.data.alt || title,
-        title,
-        category: note?.data.category,
-        description: note?.data.description,
-      },
-    });
-  }
+  const found = await Promise.all(
+    Object.entries(files).flatMap(([path, image]) => {
+      if (!image?.src || !image.width || !image.height) return [];
+      const stem = stemOf(path);
+      const note = byStem.get(stem);
+      const title = note?.data.title || titleFrom(stem);
+      return [
+        pictureOf(image).then((picture) => ({
+          name: stem,
+          shot: {
+            src: picture.src,
+            srcset: picture.srcset,
+            full: picture.full,
+            width: picture.width,
+            height: picture.height,
+            alt: note?.data.alt || title,
+            title,
+            category: note?.data.category,
+            description: note?.data.description,
+          },
+        })),
+      ];
+    }),
+  );
 
   found.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
   return found.map((item) => item.shot);

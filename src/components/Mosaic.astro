@@ -21,6 +21,9 @@ const { items, group } = Astro.props;
       >
         <Media
           src={item.src}
+          srcset={item.srcset}
+          sizes={`(min-width: 1024px) ${Math.min(72, Math.max(12, Math.round((item.width / item.height) * 20)))}rem, 100vw`}
+          full={item.full}
           alt={item.alt}
           label={item.title}
           fill

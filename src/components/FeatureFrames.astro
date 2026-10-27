@@ -20,6 +20,9 @@ const many = images.length > 1;
         <div class="frame-slide absolute inset-0" data-frame hidden={index === 0 ? undefined : true}>
           <Media
             src={image.src}
+            srcset={image.srcset}
+            full={image.full}
+            sizes="(min-width: 1024px) 42rem, 100vw"
             alt={image.alt}
             ratio={ratio}
             class="h-full !rounded-none"

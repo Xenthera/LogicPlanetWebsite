@@ -15,9 +15,9 @@ import { withBase } from "../lib/paths";
 import AstroPlanet from "../components/AstroPlanet.astro";
 
 const shots = (await loadGallery()).slice(0, 6);
-const features = loadFeatures();
-const more = loadMore();
-const heroSlides = loadGameplay();
+const features = await loadFeatures();
+const more = await loadMore();
+const heroSlides = await loadGameplay();
 ---
 
 <Base title={site.name} description={site.description} flush={shots.length > 0}>
@@ -30,7 +30,8 @@ const heroSlides = loadGameplay();
       <div class="hero-copy">
         <p class="m-0 text-[1.0625rem] leading-7 text-muted">
           <span class="text-ink">Build circuits. Create computers. Go beyond.</span>{" "}
-          From simple logic gates to custom programmable systems, design, connect, and create your own digital world—one circuit at a time.
+          From simple logic gates to custom programmable systems, design, connect, and create your own digital world—one circuit at a time.{" "}
+          <span class="text-accent">This site is still a work in progress. Look around and download the latest build — just mind the mess.</span>
         </p>
         <div class="mt-7">
           <Button href={site.download}>Download</Button>

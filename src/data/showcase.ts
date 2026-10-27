@@ -20,6 +20,8 @@ export type Feature = {
 
 export type Slide = {
   image?: string;
+  full?: string;
+  srcset?: string;
   alt?: string;
 };
 

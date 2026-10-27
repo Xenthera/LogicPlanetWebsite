@@ -26,16 +26,16 @@ import { withBase } from "../lib/paths";
 
 <script>
   type Path = { pts: number[]; acc: number[]; len: number; box: [number, number, number, number] };
-  type Color = { tail: string; head: string; weight: number };
+  type Color = { tail: number[]; head: number[]; weight: number };
   type Pulse = { path: Path; ox: number; oy: number; s: number; speed: number; tail: number; dir: 1 | -1; color: Color };
 
   // Gold stays the most common so the site accent still leads.
   const COLORS: Color[] = [
-    { tail: "245,201,107", head: "255,224,150", weight: 5 },
-    { tail: "107,211,245", head: "170,232,255", weight: 2 },
-    { tail: "120,224,160", head: "180,245,205", weight: 2 },
-    { tail: "196,150,245", head: "225,200,255", weight: 1 },
-    { tail: "245,130,110", head: "255,190,175", weight: 1 },
+    { tail: [245, 201, 107], head: [255, 224, 150], weight: 5 },
+    { tail: [107, 211, 245], head: [170, 232, 255], weight: 2 },
+    { tail: [120, 224, 160], head: [180, 245, 205], weight: 2 },
+    { tail: [196, 150, 245], head: [225, 200, 255], weight: 1 },
+    { tail: [245, 130, 110], head: [255, 190, 175], weight: 1 },
   ];
   const totalWeight = COLORS.reduce((sum, c) => sum + c.weight, 0);
   const pickColor = () => {
@@ -226,8 +226,14 @@ import { withBase } from "../lib/paths";
     function pointAt(path: Path, d: number): [number, number] {
       const { pts, acc } = path;
       d = Math.max(0, Math.min(path.len, d));
-      let i = 1;
-      while (i < acc.length - 1 && acc[i] < d) i++;
+      let lo = 1;
+      let hi = acc.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (acc[mid] < d) lo = mid + 1;
+        else hi = mid;
+      }
+      const i = lo;
       const seg = acc[i] - acc[i - 1] || 1;
       const t = (d - acc[i - 1]) / seg;
       const a = (i - 1) * 2;
@@ -263,7 +269,7 @@ import { withBase } from "../lib/paths";
     // Coverage is one continuous stroke. Color is written into those pixels
     // afterward, so a 45° chamfer cannot be painted twice and bloom.
     const scratch = document.createElement("canvas");
-    const scratchCtx = scratch.getContext("2d")!;
+    const scratchCtx = scratch.getContext("2d", { willReadFrequently: true })!;
 
     function strokeTrail(trail: { pts: number[][]; dist: number[] }, color: Color, fade: number, ox: number, oy: number) {
       const { pts, dist } = trail;
@@ -321,8 +327,6 @@ import { withBase } from "../lib/paths";
       const image = scratchCtx.getImageData(0, 0, bw, bh);
       const data = image.data;
       const total = along[along.length - 1] || 1;
-      const tail = color.tail.split(",").map(Number);
-      const head = color.head.split(",").map(Number);
       const segs: number[][] = [];
       for (let i = 0; i < local.length - 1; i++) {
         const ax = local[i][0];
@@ -358,10 +362,14 @@ import { withBase } from "../lib/paths";
           }
           const t = traveled / total;
           const tip = Math.max(0, (t - 0.72) / 0.28);
-          const rgb = tip > 0 ? tail.map((value, k) => value + (head[k] - value) * tip) : tail;
-          data[i] = rgb[0];
-          data[i + 1] = rgb[1];
-          data[i + 2] = rgb[2];
+          const tail = color.tail;
+          const head = color.head;
+          const rgb0 = tip > 0 ? tail[0] + (head[0] - tail[0]) * tip : tail[0];
+          const rgb1 = tip > 0 ? tail[1] + (head[1] - tail[1]) * tip : tail[1];
+          const rgb2 = tip > 0 ? tail[2] + (head[2] - tail[2]) * tip : tail[2];
+          data[i] = rgb0;
+          data[i + 1] = rgb1;
+          data[i + 2] = rgb2;
           data[i + 3] = Math.round(coverage * Math.pow(t, 0.75) * 0.5 * fade);
         }
       }
@@ -447,11 +455,5 @@ import { withBase } from "../lib/paths";
     };
     document.addEventListener("visibilitychange", run);
     run();
-  }
-
-  function mix(a: string, b: string, t: number) {
-    const from = a.split(",").map(Number);
-    const to = b.split(",").map(Number);
-    return from.map((value, i) => Math.round(value + (to[i] - value) * t)).join(",");
   }
 </script>

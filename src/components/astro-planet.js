@@ -362,7 +362,6 @@ export function mountAstro(canvas) {
   };
 
   const draw = () => {
-    resize();
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -400,25 +399,55 @@ export function mountAstro(canvas) {
     gl.depthMask(true);
   };
 
-  const tick = (now) => {
-    const dt = Math.min(0.05, (now - last) / 1000 || 0);
-    last = now;
-    if (!reduced && !document.hidden) turned = (turned + dt * SPIN) % (Math.PI * 2);
-    draw();
+  let onScreen = true;
+  const start = () => {
+    if (reduced || frame) return;
+    last = performance.now();
     frame = requestAnimationFrame(tick);
   };
+  const stop = () => {
+    cancelAnimationFrame(frame);
+    frame = 0;
+  };
 
-  new ResizeObserver(draw).observe(canvas);
+  const tick = (now) => {
+    frame = 0;
+    const dt = Math.min(0.05, (now - last) / 1000 || 0);
+    last = now;
+    if (!reduced && !document.hidden && onScreen) turned = (turned + dt * SPIN) % (Math.PI * 2);
+    draw();
+    if (!reduced && !document.hidden && onScreen) frame = requestAnimationFrame(tick);
+  };
+
+  new ResizeObserver(() => {
+    resize();
+    draw();
+  }).observe(canvas);
+  new IntersectionObserver(
+    (entries) => {
+      onScreen = entries.some((entry) => entry.isIntersecting);
+      if (!onScreen) {
+        stop();
+        return;
+      }
+      if (reduced) draw();
+      else if (!document.hidden) start();
+    },
+    { rootMargin: "200px" },
+  ).observe(canvas);
+
   Promise.all([loadImage(canvas.dataset.ground), loadImage(canvas.dataset.clouds)]).then(([groundImage, cloudImage]) => {
     ground = texture(gl, groundImage);
     clouds = texture(gl, cloudImage);
-    last = performance.now();
-    frame = requestAnimationFrame(tick);
+    resize();
+    if (reduced) draw();
+    else start();
   });
 
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) last = performance.now();
+    if (document.hidden) stop();
+    else if (onScreen) start();
   });
 
-  return () => cancelAnimationFrame(frame);
+  return stop;
 }

@@ -40,12 +40,16 @@ function position(index: number) {
         >
           <Media
             src={slide.image}
+            srcset={slide.srcset}
+            full={slide.full}
+            sizes="(min-width: 1024px) 72rem, 100vw"
             alt={slide.alt}
             group="hero"
             label={`Gameplay screenshot ${index + 1} · 16:9`}
             ratio="aspect-video"
             class="shadow-[var(--shadow-media)]"
             eager={index === 0}
+            fetchpriority={index === 0 ? "high" : undefined}
           />
         </div>
       ))

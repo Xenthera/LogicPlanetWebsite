@@ -3,6 +3,11 @@ import { withBase } from "../lib/paths";
 
 interface Props {
   src?: string;
+  srcset?: string;
+  sizes?: string;
+  /** Original opened in the lightbox. Defaults to src. */
+  full?: string;
+  fetchpriority?: "high" | "low" | "auto";
   alt?: string;
   /** Shown inside the empty frame when there is no image yet. */
   label?: string;
@@ -23,6 +28,10 @@ interface Props {
 
 const {
   src,
+  srcset,
+  sizes,
+  full,
+  fetchpriority,
   alt = "",
   label = "Image",
   ratio = "aspect-[16/10]",
@@ -37,6 +46,15 @@ const {
 } = Astro.props;
 
 const url = src ? withBase(src) : undefined;
+const zoom = full ? withBase(full) : url;
+const set = srcset
+  ?.split(",")
+  .map((part) => {
+    const [href, width] = part.trim().split(/\s+/);
+    return href ? `${withBase(href)}${width ? ` ${width}` : ""}` : "";
+  })
+  .filter(Boolean)
+  .join(", ");
 ---
 
 <div
@@ -50,8 +68,11 @@ const url = src ? withBase(src) : undefined;
     url ? (
       <img
         src={url}
+        srcset={set}
+        sizes={set ? sizes : undefined}
         alt={alt}
         loading={eager ? "eager" : "lazy"}
+        fetchpriority={fetchpriority}
         decoding="async"
         class:list={[
           "absolute inset-0 h-full w-full object-cover",
@@ -76,7 +97,7 @@ const url = src ? withBase(src) : undefined;
       <button
         type="button"
         data-lightbox-trigger
-        data-src={url}
+        data-src={zoom}
         data-alt={alt}
         data-label={label}
         data-group={group}

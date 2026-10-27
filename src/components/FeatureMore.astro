@@ -18,6 +18,9 @@ const many = items.length > 1;
           <div class="more-frame absolute inset-0" data-more-frame hidden={index === 0 ? undefined : true}>
             <Media
               src={item.image}
+              srcset={item.srcset}
+              full={item.full}
+              sizes="(min-width: 1024px) 42rem, 100vw"
               alt={item.image ? item.title : ""}
               ratio="aspect-[4/3]"
               class="h-full !rounded-none"

@@ -226,6 +226,7 @@
     const close = dialog.querySelector<HTMLButtonElement>("[data-lb-close]")!;
     const prev = dialog.querySelector<HTMLButtonElement>("[data-lb-prev]")!;
     const next = dialog.querySelector<HTMLButtonElement>("[data-lb-next]")!;
+    const stage = dialog.querySelector<HTMLElement>("[data-lb-stage]")!;
 
     const ease = "cubic-bezier(0.2, 0.8, 0.2, 1)";
     let items: HTMLElement[] = [];
@@ -236,6 +237,38 @@
     const current = () => items[index];
     const frameOf = (trigger: HTMLElement) => trigger.parentElement ?? trigger;
     const visibleMedia = () => (image.hidden ? placeholder : image);
+
+    const mediaRatio = (media: HTMLElement) => {
+      if (media === image && image.naturalWidth > 0 && image.naturalHeight > 0) {
+        return image.naturalWidth / image.naturalHeight;
+      }
+      const parsed = Number.parseFloat(placeholder.style.getPropertyValue("--ratio"));
+      return parsed > 0 ? parsed : 1;
+    };
+
+    // The stage size is definite, but the image's automatic size does not track it.
+    // Fit the center picture ourselves, and again whenever the page scrolls.
+    const fit = (media = visibleMedia(), force = false) => {
+      if ((sliding && !force) || !dialog.open) return;
+      const bounds = stage.getBoundingClientRect();
+      if (bounds.width < 2 || bounds.height < 2) return;
+      const ratio = mediaRatio(media);
+      let width = bounds.width;
+      let height = width / ratio;
+      if (height > bounds.height) {
+        height = bounds.height;
+        width = height * ratio;
+      }
+      media.style.maxWidth = "none";
+      media.style.maxHeight = "none";
+      media.style.width = `${Math.max(1, Math.round(width))}px`;
+      media.style.height = `${Math.max(1, Math.round(height))}px`;
+    };
+
+    const refit = () => {
+      if (!dialog.open || closing || sliding) return;
+      fit();
+    };
 
     const groupOf = (trigger: HTMLElement) => {
       const group = trigger.dataset.group;
@@ -314,6 +347,8 @@
       await fill();
       dialog.showModal();
       announce("lightbox:open");
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      fit();
 
       if (reduce.matches) return;
       const transform = flipFrom(trigger);
@@ -358,6 +393,8 @@
         dialog.getAnimations({ subtree: true }).forEach((animation) => animation.cancel());
       }
 
+      releaseBox(image);
+      releaseBox(placeholder);
       dialog.close();
       trigger.focus({ preventScroll: true });
       closing = false;
@@ -379,6 +416,8 @@
     const releaseBox = (el: HTMLElement) => {
       el.style.width = "";
       el.style.height = "";
+      el.style.maxWidth = "";
+      el.style.maxHeight = "";
     };
 
     const step = async (delta: number) => {
@@ -412,9 +451,10 @@
       const incoming = visibleMedia();
       if (incoming !== outgoing) releaseBox(outgoing);
       releaseBox(incoming);
+      incoming.getAnimations().forEach((animation) => animation.cancel());
+      fit(incoming, true);
       const natural = incoming.getBoundingClientRect();
       pinBox(incoming, box.width, box.height);
-      incoming.getAnimations().forEach((animation) => animation.cancel());
       const enter = incoming.animate(
         [
           {
@@ -433,8 +473,10 @@
         { duration: 320, easing: ease, fill: "both" },
       );
       enter.finished.finally(() => {
+        enter.cancel();
         releaseBox(incoming);
         sliding = false;
+        fit(incoming);
       });
     };
 
@@ -475,6 +517,11 @@
       if (event.key === "ArrowLeft") step(-1);
       if (event.key === "ArrowRight") step(1);
     });
+
+    window.addEventListener("scroll", refit, { passive: true });
+    window.addEventListener("resize", refit);
+    dialog.addEventListener("wheel", refit, { passive: true });
+    new ResizeObserver(refit).observe(stage);
 
     dialog.addEventListener("pointerdown", (event) => {
       swiped = false;
