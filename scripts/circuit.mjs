@@ -870,7 +870,8 @@ for (const route of live) {
     while (periods > 1 && periods * pitch > run - 2) periods--;
     const minPeriods = Math.max(8, Math.round((run * 0.65) / pitch));
     let placed = false;
-    if (!used && periods >= 8 && (route.net.serpentine || chance(0.72))) {
+    // A long straight only folds sometimes. The reserved corridors can, but most of them stay straight.
+    if (!used && periods >= 8 && chance(0.4)) {
       const flips = chance(0.5) ? [1, -1] : [-1, 1];
       for (; periods >= minPeriods && !placed; periods -= 2) {
         const span = periods * pitch;

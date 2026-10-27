@@ -51,7 +51,7 @@ const heroSlides = loadGameplay();
       <h2 class="section-label m-0">Features</h2>
     </div>
 
-    <div class="mt-10 grid gap-4 wide:grid-cols-12 wide:gap-5">
+    <div class="mt-10 grid gap-4 md:grid-cols-12 md:gap-5">
       {
         features.map((feature) => {
           if (feature.layout === "lead" || feature.layout === "mirror") {
@@ -59,16 +59,16 @@ const heroSlides = loadGameplay();
             return (
               <article
                 class:list={[
-                  "feature-panel grid gap-8 wide:col-span-12 wide:items-center",
+                  "feature-panel grid gap-8 md:col-span-12 md:items-center",
                   mirrored
-                    ? "wide:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]"
-                    : "wide:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]",
+                    ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]"
+                    : "md:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]",
                 ]}
               >
-                <div class:list={[mirrored && "wide:col-start-2 wide:row-start-1"]}>
+                <div class:list={[mirrored && "md:col-start-2 md:row-start-1"]}>
                   <FeatureFrames images={feature.images} title={feature.title} label="Feature image · 4:3" ratio="aspect-[4/3]" />
                 </div>
-                <div class:list={[mirrored && "wide:col-start-1 wide:row-start-1"]}>
+                <div class:list={[mirrored && "md:col-start-1 md:row-start-1"]}>
                   <FeatureText feature={feature} size="large" />
                 </div>
               </article>
@@ -80,7 +80,7 @@ const heroSlides = loadGameplay();
             );
             const copy = <FeatureText feature={feature} />;
             return (
-              <article class="feature-panel flex flex-col gap-7 wide:col-span-6">
+              <article class="feature-panel flex flex-col gap-7 md:col-span-6">
                 {feature.layout === "card-top" ? copy : frames}
                 {feature.layout === "card-top" ? frames : copy}
               </article>
@@ -88,7 +88,7 @@ const heroSlides = loadGameplay();
           }
           if (feature.layout === "tall") {
             return (
-              <article class="wide:col-span-5">
+              <article class="md:col-span-6 lg:col-span-5">
                 <FeatureFrames images={feature.images} title={feature.title} label="Feature image · 4:5" ratio="aspect-[4/5]" />
                 <div class="mt-7">
                   <FeatureText feature={feature} />
@@ -98,7 +98,7 @@ const heroSlides = loadGameplay();
           }
           if (feature.layout === "offset") {
             return (
-              <article class="wide:col-span-6 wide:col-start-7 wide:pt-16">
+              <article class="md:col-span-6 md:pt-16 lg:col-span-6 lg:col-start-7">
                 <FeatureFrames images={feature.images} title={feature.title} label="Feature image · 4:3" ratio="aspect-[4/3]" />
                 <div class="mt-7">
                   <FeatureText feature={feature} />
@@ -107,7 +107,7 @@ const heroSlides = loadGameplay();
             );
           }
           return (
-            <article class="wide:col-span-12">
+            <article class="md:col-span-12">
               <FeatureFrames images={feature.images} title={feature.title} label="Feature image · 21:9" ratio="aspect-[4/3] sm:aspect-[21/9]" />
               <div class="mt-8 max-w-xl">
                 <FeatureText feature={feature} />
@@ -138,9 +138,9 @@ const heroSlides = loadGameplay();
               All screenshots
             </a>
           </div>
-          <ul class="mt-8 grid list-none gap-4 p-0 sm:gap-5 wide:grid-cols-12">
+          <ul class="mt-8 grid list-none gap-4 p-0 sm:gap-5 md:grid-cols-12">
             {shots.map((shot, index) => (
-              <li class:list={[index === 0 ? "wide:col-span-8 wide:row-span-2" : "wide:col-span-4"]}>
+              <li class:list={[index === 0 ? "md:col-span-8 md:row-span-2" : "md:col-span-4"]}>
                 <Media
                   src={shot.data.image}
                   alt={shot.data.alt}
@@ -149,7 +149,7 @@ const heroSlides = loadGameplay();
                   title={shot.data.title}
                   category={shot.data.category}
                   caption={shot.data.description}
-                  ratio={index === 0 ? "aspect-[4/3] wide:aspect-auto wide:h-full" : "aspect-[4/3]"}
+                  ratio={index === 0 ? "aspect-[4/3] md:aspect-auto md:h-full" : "aspect-[4/3]"}
                   class="transition-shadow hover:shadow-[var(--shadow-media)]"
                 />
               </li>

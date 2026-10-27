@@ -10,7 +10,7 @@ const { items } = Astro.props;
 const many = items.length > 1;
 ---
 
-<article class="feature-panel grid gap-8 wide:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] wide:items-center" data-more>
+<article class="feature-panel grid gap-8 md:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] md:items-center" data-more>
   <div class="relative">
     <div class="more-stage relative aspect-[4/3] overflow-hidden rounded-[var(--radius-media)] bg-tint">
       {
