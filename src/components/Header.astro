@@ -2,6 +2,7 @@
 import { site } from "../data/site";
 import { navigation } from "../data/navigation";
 import { withBase } from "../lib/paths";
+import SocialLinks from "./SocialLinks.astro";
 
 const current = Astro.url.pathname.replace(/\/$/, "") || "/";
 
@@ -38,12 +39,15 @@ function isCurrent(href: string) {
           </a>
         ))
       }
-      <a
-        href={withBase(site.download)}
-        class="inline-flex h-9 items-center rounded-[var(--radius-control)] bg-accent px-4 text-[0.875rem] font-medium text-bg transition-colors hover:bg-accent-bright"
-      >
-        Download
-      </a>
+      <div class="flex items-center gap-3">
+        <SocialLinks />
+        <a
+          href={withBase(site.download)}
+          class="inline-flex h-9 items-center rounded-[var(--radius-control)] bg-accent px-4 text-[0.875rem] font-medium text-bg transition-colors hover:bg-accent-bright"
+        >
+          Download
+        </a>
+      </div>
     </nav>
 
     <details class="relative md:hidden">
@@ -69,7 +73,10 @@ function isCurrent(href: string) {
               </li>
             ))
           }
-          <li class="mt-1 border-t border-line pt-1">
+          <li class="mt-1 border-t border-line px-1.5 py-1.5">
+            <SocialLinks />
+          </li>
+          <li>
             <a href={withBase(site.download)} class="block rounded-md px-3 py-2.5 text-[0.9375rem] font-medium text-accent hover:bg-tint">
               Download
             </a>
