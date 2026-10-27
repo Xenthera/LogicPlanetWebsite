@@ -1,0 +1,493 @@
+<dialog data-lightbox class="lightbox" aria-label="Image viewer">
+  <div data-lb-backdrop class="backdrop" aria-hidden="true"></div>
+
+  <div class="layout">
+    <div data-lb-chrome class="bar">
+      <p data-lb-counter class="label m-0" aria-live="polite"></p>
+      <button data-lb-close type="button" class="control" aria-label="Close" autofocus>
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          <path d="M2 2 L12 12 M12 2 L2 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+
+    <div data-lb-stage class="stage">
+      <img data-lb-image data-lb-keep class="media" alt="" hidden />
+      <div data-lb-placeholder data-lb-keep class="media placeholder" hidden>
+        <div class="placeholder-inset" aria-hidden="true"></div>
+        <span data-lb-placeholder-label class="label relative px-4 text-center"></span>
+      </div>
+    </div>
+
+    <div data-lb-chrome class="caption">
+      <p data-lb-title class="m-0 text-[0.9375rem] text-ink">
+        <span data-lb-title-text></span>
+        <span data-lb-category class="ml-2 text-faint"></span>
+      </p>
+      <p data-lb-description class="mx-auto mt-1.5 mb-0 max-w-xl text-[0.9375rem] leading-6 text-muted"></p>
+    </div>
+  </div>
+
+  <button data-lb-prev data-lb-chrome type="button" class="control nav prev" aria-label="Previous image">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </button>
+  <button data-lb-next data-lb-chrome type="button" class="control nav next" aria-label="Next image">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </button>
+</dialog>
+
+<style>
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-ink);
+    overflow: hidden;
+  }
+
+  .lightbox::backdrop {
+    background: transparent;
+  }
+
+  .backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 14, 22, 0.72);
+    -webkit-backdrop-filter: blur(22px) saturate(1.15);
+    backdrop-filter: blur(22px) saturate(1.15);
+  }
+
+  .layout {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100%;
+    padding: 0 1rem 1.25rem;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 4.25rem;
+    padding-left: 0.25rem;
+  }
+
+  .stage {
+    container-type: size;
+    display: grid;
+    place-items: center;
+    min-height: 0;
+  }
+
+  .media {
+    border-radius: var(--radius-media);
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
+    transform-origin: center;
+  }
+
+  img.media {
+    display: block;
+    max-width: 100cqw;
+    max-height: 100cqh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .placeholder {
+    position: relative;
+    display: grid;
+    place-items: center;
+    --ratio: 1.7778;
+    width: min(100cqw, 100cqh * var(--ratio));
+    aspect-ratio: var(--ratio);
+    background: var(--color-tint);
+  }
+
+  .placeholder[hidden],
+  img.media[hidden] {
+    display: none;
+  }
+
+  .placeholder-inset {
+    position: absolute;
+    inset: 1rem;
+    border: 1px dashed var(--color-line-strong);
+    border-radius: 10px;
+  }
+
+  .caption {
+    min-height: 3.5rem;
+    padding: 1.25rem 3.5rem 0;
+    text-align: center;
+  }
+
+  .control {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 999px;
+    background: rgba(238, 242, 247, 0.08);
+    color: var(--color-ink);
+    transition:
+      background-color 200ms ease,
+      opacity 200ms ease;
+  }
+
+  .control:hover {
+    background: rgba(238, 242, 247, 0.16);
+  }
+
+  .control:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .control[disabled] {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .nav {
+    position: absolute;
+    bottom: 1.25rem;
+  }
+
+  .nav[hidden] {
+    display: none;
+  }
+
+  .prev {
+    left: 1rem;
+  }
+
+  .next {
+    right: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .layout {
+      padding: 0 5.5rem 1.75rem;
+    }
+
+    .bar {
+      padding-left: 0;
+      margin-right: -4.25rem;
+    }
+
+    .caption {
+      padding: 1.25rem 0 0;
+    }
+
+    .nav {
+      top: 50%;
+      bottom: auto;
+      transform: translateY(-50%);
+    }
+
+    .prev {
+      left: 1.5rem;
+    }
+
+    .next {
+      right: 1.5rem;
+    }
+  }
+</style>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>("[data-lightbox]");
+
+  if (dialog) {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const backdrop = dialog.querySelector<HTMLElement>("[data-lb-backdrop]")!;
+    const chrome = [...dialog.querySelectorAll<HTMLElement>("[data-lb-chrome]")];
+    const image = dialog.querySelector<HTMLImageElement>("[data-lb-image]")!;
+    const placeholder = dialog.querySelector<HTMLElement>("[data-lb-placeholder]")!;
+    const placeholderLabel = dialog.querySelector<HTMLElement>("[data-lb-placeholder-label]")!;
+    const counter = dialog.querySelector<HTMLElement>("[data-lb-counter]")!;
+    const titleRow = dialog.querySelector<HTMLElement>("[data-lb-title]")!;
+    const titleText = dialog.querySelector<HTMLElement>("[data-lb-title-text]")!;
+    const category = dialog.querySelector<HTMLElement>("[data-lb-category]")!;
+    const description = dialog.querySelector<HTMLElement>("[data-lb-description]")!;
+    const close = dialog.querySelector<HTMLButtonElement>("[data-lb-close]")!;
+    const prev = dialog.querySelector<HTMLButtonElement>("[data-lb-prev]")!;
+    const next = dialog.querySelector<HTMLButtonElement>("[data-lb-next]")!;
+
+    const ease = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+    let items: HTMLElement[] = [];
+    let index = 0;
+    let closing = false;
+    let sliding = false;
+
+    const current = () => items[index];
+    const frameOf = (trigger: HTMLElement) => trigger.parentElement ?? trigger;
+    const visibleMedia = () => (image.hidden ? placeholder : image);
+
+    const groupOf = (trigger: HTMLElement) => {
+      const group = trigger.dataset.group;
+      if (!group) return [trigger];
+      return [...document.querySelectorAll<HTMLElement>("[data-lightbox-trigger]")].filter(
+        (item) => item.dataset.group === group,
+      );
+    };
+
+    const fill = async () => {
+      const trigger = current();
+      const { src, alt = "", label = "Image", title = "", category: cat = "", caption = "" } = trigger.dataset;
+
+      if (src) {
+        image.alt = alt;
+        if (image.getAttribute("src") !== src) image.src = src;
+        image.hidden = false;
+        placeholder.hidden = true;
+        await image.decode().catch(() => undefined);
+      } else {
+        const frame = frameOf(trigger).getBoundingClientRect();
+        if (frame.width && frame.height) placeholder.style.setProperty("--ratio", String(frame.width / frame.height));
+        placeholderLabel.textContent = label;
+        placeholder.setAttribute("role", "img");
+        placeholder.setAttribute("aria-label", label);
+        placeholder.hidden = false;
+        image.hidden = true;
+        image.removeAttribute("src");
+      }
+
+      titleText.textContent = title;
+      category.textContent = cat;
+      titleRow.hidden = !title && !cat;
+      description.textContent = caption;
+      description.hidden = !caption;
+
+      const many = items.length > 1;
+      counter.textContent = many ? `${index + 1} / ${items.length}` : "";
+      prev.hidden = next.hidden = !many;
+      prev.disabled = index === 0;
+      next.disabled = index === items.length - 1;
+    };
+
+    const flipFrom = (trigger: HTMLElement) => {
+      const media = visibleMedia();
+      const from = frameOf(trigger).getBoundingClientRect();
+      const to = media.getBoundingClientRect();
+      if (!from.width || !to.width) return null;
+      const scale = from.width / to.width;
+      const dx = from.left + from.width / 2 - (to.left + to.width / 2);
+      const dy = from.top + from.height / 2 - (to.top + to.height / 2);
+      return `translate(${dx}px, ${dy}px) scale(${scale})`;
+    };
+
+    const inViewport = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
+    };
+
+    const fade = (els: Element[], from: number, to: number, duration: number, delay = 0) =>
+      els.map(
+        (el) =>
+          el.animate({ opacity: [from, to] }, { duration, delay, easing: "ease", fill: to ? "backwards" : "forwards" })
+            .finished,
+      );
+
+    const announce = (type: "lightbox:open" | "lightbox:change" | "lightbox:close") => {
+      current().dispatchEvent(new CustomEvent(type, { bubbles: true }));
+    };
+
+    const open = async (trigger: HTMLElement) => {
+      items = groupOf(trigger);
+      index = Math.max(0, items.indexOf(trigger));
+      closing = false;
+
+      await fill();
+      dialog.showModal();
+      announce("lightbox:open");
+
+      if (reduce.matches) return;
+      const transform = flipFrom(trigger);
+      fade([backdrop], 0, 1, 320);
+      fade(chrome, 0, 1, 260, 120);
+      visibleMedia().animate(
+        transform
+          ? [
+              { transform, opacity: 0.6 },
+              { transform: "none", opacity: 1 },
+            ]
+          : [
+              { transform: "scale(0.96)", opacity: 0 },
+              { transform: "none", opacity: 1 },
+            ],
+        { duration: 420, easing: ease },
+      );
+    };
+
+    const dismiss = async () => {
+      if (closing || !dialog.open) return;
+      closing = true;
+      const trigger = current();
+      announce("lightbox:close");
+
+      if (!reduce.matches) {
+        const frame = frameOf(trigger);
+        const transform = inViewport(frame) ? flipFrom(trigger) : null;
+        const media = visibleMedia().animate(
+          transform
+            ? [
+                { transform: "none", opacity: 1 },
+                { transform, opacity: 0.6 },
+              ]
+            : [
+                { transform: "none", opacity: 1 },
+                { transform: "scale(0.96)", opacity: 0 },
+              ],
+          { duration: transform ? 360 : 220, easing: ease, fill: "forwards" },
+        );
+        await Promise.all([media.finished, ...fade([backdrop], 1, 0, 300), ...fade(chrome, 1, 0, 160)]);
+        dialog.getAnimations({ subtree: true }).forEach((animation) => animation.cancel());
+      }
+
+      dialog.close();
+      trigger.focus({ preventScroll: true });
+      closing = false;
+      sliding = false;
+    };
+
+    const preload = (at: number) => {
+      const src = items[at]?.dataset.src;
+      if (!src) return;
+      const img = new Image();
+      img.src = src;
+    };
+
+    const pinBox = (el: HTMLElement, width: number, height: number) => {
+      el.style.width = `${width}px`;
+      el.style.height = `${height}px`;
+    };
+
+    const releaseBox = (el: HTMLElement) => {
+      el.style.width = "";
+      el.style.height = "";
+    };
+
+    const step = async (delta: number) => {
+      const target = index + delta;
+      if (sliding || closing || target < 0 || target >= items.length) return;
+      sliding = true;
+      preload(target);
+
+      if (reduce.matches) {
+        index = target;
+        await fill();
+        announce("lightbox:change");
+        sliding = false;
+        return;
+      }
+
+      const outgoing = visibleMedia();
+      const box = outgoing.getBoundingClientRect();
+      pinBox(outgoing, box.width, box.height);
+      await outgoing.animate(
+        [
+          { transform: "translateX(0)", opacity: 1 },
+          { transform: `translateX(${delta * -16}%)`, opacity: 0 },
+        ],
+        { duration: 160, easing: "ease-in", fill: "forwards" },
+      ).finished;
+
+      index = target;
+      await fill();
+      announce("lightbox:change");
+      const incoming = visibleMedia();
+      if (incoming !== outgoing) releaseBox(outgoing);
+      releaseBox(incoming);
+      const natural = incoming.getBoundingClientRect();
+      pinBox(incoming, box.width, box.height);
+      incoming.getAnimations().forEach((animation) => animation.cancel());
+      const enter = incoming.animate(
+        [
+          {
+            transform: `translateX(${delta * 16}%)`,
+            opacity: 0,
+            width: `${box.width}px`,
+            height: `${box.height}px`,
+          },
+          {
+            transform: "translateX(0)",
+            opacity: 1,
+            width: `${natural.width || box.width}px`,
+            height: `${natural.height || box.height}px`,
+          },
+        ],
+        { duration: 320, easing: ease, fill: "both" },
+      );
+      enter.finished.finally(() => {
+        releaseBox(incoming);
+        sliding = false;
+      });
+    };
+
+    document.addEventListener("click", (event) => {
+      const trigger = (event.target as Element | null)?.closest<HTMLElement>("[data-lightbox-trigger]");
+      if (!trigger || event.defaultPrevented) return;
+      event.preventDefault();
+      open(trigger);
+    });
+
+    close.addEventListener("click", dismiss);
+    prev.addEventListener("click", () => step(-1));
+    next.addEventListener("click", () => step(1));
+
+    let swipeX: number | null = null;
+    let swiped = false;
+
+    dialog.addEventListener("click", (event) => {
+      if (swiped) {
+        swiped = false;
+        return;
+      }
+      const target = event.target as Element;
+      if (target.closest("[data-lb-keep], button")) return;
+      dismiss();
+    });
+
+    dialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      dismiss();
+    });
+
+    dialog.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        dismiss();
+      }
+      if (event.key === "ArrowLeft") step(-1);
+      if (event.key === "ArrowRight") step(1);
+    });
+
+    dialog.addEventListener("pointerdown", (event) => {
+      swiped = false;
+      swipeX = event.pointerType === "mouse" ? null : event.clientX;
+    });
+    dialog.addEventListener("pointerup", (event) => {
+      if (swipeX === null) return;
+      const dx = event.clientX - swipeX;
+      swipeX = null;
+      if (Math.abs(dx) > 50 && items.length > 1) {
+        swiped = true;
+        step(dx < 0 ? 1 : -1);
+      }
+    });
+  }
+</script>

@@ -9,12 +9,17 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "circuit": "node scripts/circuit.mjs",
+    "astro-textures": "node scripts/astro-textures.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.4.2",
     "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "fastnoise-lite": "^1.1.1"
   }
 }

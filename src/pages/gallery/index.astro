@@ -1,49 +1,43 @@
 ---
 import Base from "../../layouts/Base.astro";
-import Frame from "../../components/Frame.astro";
+import Media from "../../components/Media.astro";
 import { getGallery } from "../../lib/content";
-import { withBase } from "../../lib/paths";
 
 const items = await getGallery();
-const categories = [...new Set(items.map((item) => item.data.category))];
 ---
 
-<Base
-  title="Gallery"
-  description="Screenshots and circuits from Logic Planet. Placeholder frames stand in until real images are added."
->
-  <header class="mx-auto max-w-6xl px-5 pb-4 pt-16 md:pt-24">
-    <p class="m-0 font-mono text-xs tracking-[0.18em] text-gold uppercase">Gallery</p>
-    <h1 class="mt-4 font-display text-5xl tracking-tight">The world, when we have a picture of it.</h1>
-    <p class="mt-6 max-w-2xl text-lg leading-8 text-muted">
-      Each entry below is a labeled placeholder. A real screenshot replaces the image file; the page does not need to change.
-    </p>
+<Base title="Gallery" description="Screenshots from Logic Planet.">
+  <section class="shell pt-12 sm:pt-16 lg:pt-20">
+    <h1 class="section-label m-0">Gallery</h1>
+
     {
-      categories.length > 0 && (
-        <ul class="mt-8 flex list-none flex-wrap gap-2 p-0">
-          {categories.map((category) => (
-            <li class="border border-line px-3 py-1 font-mono text-xs tracking-wide text-muted">{category}</li>
+      items.length === 0 ? (
+        <p class="mt-10 text-muted">No screenshots yet.</p>
+      ) : (
+        <ul class="mt-12 grid list-none gap-x-5 gap-y-10 p-0 sm:grid-cols-2">
+          {items.map((item, index) => (
+            <li class:list={[index % 3 === 0 && "sm:col-span-2"]}>
+              <Media
+                src={item.data.image}
+                alt={item.data.alt}
+                label={item.data.title}
+                group="gallery"
+                title={item.data.title}
+                category={item.data.category}
+                caption={item.data.description}
+                ratio={index % 3 === 0 ? "aspect-[4/3] sm:aspect-video" : "aspect-[4/3]"}
+                class="transition-shadow hover:shadow-[var(--shadow-media)]"
+              />
+              {item.data.image && (
+                <p class="mt-4 text-[0.9375rem] text-ink">
+                  {item.data.title}
+                  {item.data.category && <span class="ml-2 text-faint">{item.data.category}</span>}
+                </p>
+              )}
+            </li>
           ))}
         </ul>
       )
     }
-  </header>
-
-  {
-    items.length === 0 ? (
-      <p class="mx-auto max-w-6xl px-5 py-16 text-muted">Nothing in the gallery yet.</p>
-    ) : (
-      <ul class="mx-auto grid max-w-6xl list-none gap-x-8 gap-y-14 px-5 py-16 md:grid-cols-2">
-        {items.map((item, index) => (
-          <li class:list={[index === 0 && "md:col-span-2"]}>
-            <a href={withBase(`/gallery/${item.id}`)} class="group block">
-              <Frame src={item.data.image} alt={item.data.alt} label={item.data.category} />
-              <h2 class="mt-4 font-display text-2xl group-hover:text-gold">{item.data.title}</h2>
-              <p class="mt-2 max-w-xl text-sm leading-6 text-muted">{item.data.description}</p>
-            </a>
-          </li>
-        ))}
-      </ul>
-    )
-  }
+  </section>
 </Base>

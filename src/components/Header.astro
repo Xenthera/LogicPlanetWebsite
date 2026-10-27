@@ -6,16 +6,20 @@ import { withBase } from "../lib/paths";
 const current = Astro.url.pathname.replace(/\/$/, "") || "/";
 
 function isCurrent(href: string) {
+  if (href.includes("#")) return false;
   const path = withBase(href).replace(/\/$/, "") || "/";
-  return current === path || current.endsWith(href);
+  if (current === path) return true;
+  const home = withBase("/").replace(/\/$/, "") || "/";
+  if (path === home) return false;
+  return current.startsWith(`${path}/`);
 }
 ---
 
-<header class="border-b border-line">
-  <div class="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
-    <a href={withBase("/")} class="flex items-center gap-3 rounded-sm">
-      <img src={withBase("/brand/mark.png")} alt="" width="40" height="40" class="h-10 w-10" />
-      <span class="font-display text-xl tracking-tight">{site.name}</span>
+<header class="sticky top-0 z-40 border-b border-line bg-bg">
+  <div class="shell flex h-16 items-center justify-between gap-6">
+    <a href={withBase("/")} class="flex items-center gap-2.5 rounded-sm">
+      <img src={withBase("/brand/mark.png")} alt="" width="36" height="34" class="h-8 w-auto" />
+      <span class="font-display text-[1.3125rem] tracking-[-0.01em]">{site.name}</span>
     </a>
 
     <nav class="hidden items-center gap-8 md:flex" aria-label="Primary">
@@ -23,10 +27,11 @@ function isCurrent(href: string) {
         navigation.map((item) => (
           <a
             href={withBase(item.href)}
+            data-home={item.href === "/" ? "" : undefined}
             aria-current={isCurrent(item.href) ? "page" : undefined}
             class:list={[
-              "text-sm text-muted hover:text-ink",
-              isCurrent(item.href) && "text-ink",
+              "text-[0.9375rem] transition-colors hover:text-ink",
+              isCurrent(item.href) ? "text-ink" : "text-muted",
             ]}
           >
             {item.label}
@@ -34,35 +39,38 @@ function isCurrent(href: string) {
         ))
       }
       <a
-        href={site.download}
-        class="bg-gold px-4 py-2 text-sm font-medium text-gold-ink rounded-sm hover:bg-[#ffe09a]"
+        href={withBase(site.download)}
+        class="inline-flex h-9 items-center rounded-[var(--radius-control)] bg-accent px-4 text-[0.875rem] font-medium text-bg transition-colors hover:bg-accent-bright"
       >
         Download
       </a>
     </nav>
 
     <details class="relative md:hidden">
-      <summary class="cursor-pointer px-3 py-2 text-sm text-ink">Menu</summary>
+      <summary class="flex h-9 cursor-pointer items-center rounded-[var(--radius-control)] border border-line-strong px-3 text-[0.875rem]">
+        Menu
+      </summary>
       <nav
-        class="absolute right-0 z-10 mt-2 w-52 border border-line bg-bg p-3"
+        class="absolute right-0 z-10 mt-2 w-56 rounded-[12px] border border-line bg-raised p-2 shadow-[var(--shadow-media)]"
         aria-label="Primary"
       >
-        <ul class="m-0 flex list-none flex-col gap-1 p-0">
+        <ul class="m-0 flex list-none flex-col p-0">
           {
             navigation.map((item) => (
               <li>
                 <a
                   href={withBase(item.href)}
+                  data-home={item.href === "/" ? "" : undefined}
                   aria-current={isCurrent(item.href) ? "page" : undefined}
-                  class="block px-2 py-2 text-sm text-muted hover:text-ink"
+                  class="block rounded-md px-3 py-2.5 text-[0.9375rem] text-ink hover:bg-tint"
                 >
                   {item.label}
                 </a>
               </li>
             ))
           }
-          <li>
-            <a href={site.download} class="block px-2 py-2 text-sm text-gold">
+          <li class="mt-1 border-t border-line pt-1">
+            <a href={withBase(site.download)} class="block rounded-md px-3 py-2.5 text-[0.9375rem] font-medium text-accent hover:bg-tint">
               Download
             </a>
           </li>
@@ -71,3 +79,17 @@ function isCurrent(href: string) {
     </details>
   </div>
 </header>
+
+<script>
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  for (const link of document.querySelectorAll("a[data-home]")) {
+    link.addEventListener("click", (event) => {
+      const here = location.pathname.replace(/\/$/, "") || "/";
+      const there = new URL(link.href).pathname.replace(/\/$/, "") || "/";
+      if (here !== there) return;
+      event.preventDefault();
+      if (location.hash) history.pushState(null, "", there);
+      window.scrollTo({ top: 0, behavior: reduce.matches ? "auto" : "smooth" });
+    });
+  }
+</script>

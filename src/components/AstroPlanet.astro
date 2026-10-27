@@ -1,0 +1,42 @@
+---
+import ground from "../assets/astro/ground.png";
+import clouds from "../assets/astro/clouds.png";
+
+const groundSrc = typeof ground === "string" ? ground : ground.src;
+const cloudSrc = typeof clouds === "string" ? clouds : clouds.src;
+---
+
+<div class="astro-planet shrink-0" role="img" aria-label="Astro">
+  <canvas data-ground={groundSrc} data-clouds={cloudSrc}></canvas>
+</div>
+
+<style>
+  .astro-planet {
+    width: min(18rem, 72vw);
+    aspect-ratio: 4 / 3;
+    pointer-events: none;
+  }
+  .astro-planet canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  @media (min-width: 700px) and (max-width: 1199px) {
+    .astro-planet {
+      width: min(12.5rem, 34vw);
+    }
+  }
+  @media (min-width: 1200px) {
+    .astro-planet {
+      width: clamp(15rem, 17vw, 18rem);
+    }
+  }
+</style>
+
+<script>
+  import { mountAstro } from "./astro-planet.js";
+
+  for (const canvas of document.querySelectorAll(".astro-planet canvas")) {
+    mountAstro(canvas);
+  }
+</script>

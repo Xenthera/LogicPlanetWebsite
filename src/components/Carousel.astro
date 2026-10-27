@@ -1,0 +1,309 @@
+---
+import Media from "./Media.astro";
+import type { Slide } from "../data/showcase";
+
+interface Props {
+  slides: Slide[];
+  label: string;
+  /** Milliseconds each slide stays in front. */
+  interval?: number;
+}
+
+const { slides, label, interval = 5000 } = Astro.props;
+const count = slides.length;
+
+function position(index: number) {
+  return String(Math.min(index, 2));
+}
+---
+
+<div
+  data-carousel
+  data-interval={interval}
+  class="carousel relative"
+  role="region"
+  aria-roledescription="carousel"
+  aria-label={label}
+>
+  <div class="stage relative">
+    <div class="sizer mx-auto aspect-video" aria-hidden="true"></div>
+    {
+      slides.map((slide, index) => (
+        <div
+          data-slide
+          data-pos={position(index)}
+          class="slide"
+          role="group"
+          aria-roledescription="slide"
+          aria-label={`${index + 1} of ${count}`}
+          aria-hidden={index === 0 ? undefined : "true"}
+        >
+          <Media
+            src={slide.image}
+            alt={slide.alt}
+            group="hero"
+            label={`Gameplay screenshot ${index + 1} · 16:9`}
+            ratio="aspect-video"
+            class="shadow-[var(--shadow-media)]"
+            eager={index === 0}
+          />
+        </div>
+      ))
+    }
+  </div>
+
+  {
+    count > 1 && (
+      <div class="mt-5 flex items-center justify-center gap-2">
+        <div class="dots inline-flex items-center rounded-full px-1.5 py-1">
+          {slides.map((_, index) => (
+            <button
+              type="button"
+              data-dot={index}
+              class="dot grid h-5 w-5 place-items-center rounded-full"
+              aria-label={`Show screenshot ${index + 1}`}
+              aria-current={index === 0 ? "true" : undefined}
+            >
+              <span class="block h-[7px] w-[7px] rounded-full" />
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          data-toggle
+          class="toggle grid h-7 w-7 place-items-center rounded-full text-faint hover:text-ink"
+          aria-label="Pause slideshow"
+        >
+          <svg data-icon="pause" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+            <rect x="1.5" y="1" width="2.2" height="8" rx="0.6" fill="currentColor" />
+            <rect x="6.3" y="1" width="2.2" height="8" rx="0.6" fill="currentColor" />
+          </svg>
+          <svg data-icon="play" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" hidden>
+            <path d="M2.5 1.2 L8.6 5 L2.5 8.8 Z" fill="currentColor" />
+          </svg>
+        </button>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .carousel {
+    --w: 100%;
+    --shift: 84%;
+  }
+
+  .sizer {
+    width: var(--w);
+  }
+
+  .slide {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: var(--w);
+    opacity: 0;
+    filter: blur(16px);
+    z-index: 0;
+    pointer-events: none;
+    transition:
+      transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1),
+      opacity 900ms cubic-bezier(0.22, 0.61, 0.36, 1),
+      filter 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .slide[data-pos="0"] {
+    transform: translateX(-50%);
+    opacity: 1;
+    filter: none;
+    z-index: 3;
+    pointer-events: auto;
+  }
+
+  .slide[data-pos="-1"],
+  .slide[data-pos="1"] {
+    opacity: 0.55;
+    filter: blur(4px) brightness(0.8);
+    z-index: 2;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .slide[data-pos="-1"] {
+    transform: translateX(calc(-50% - var(--shift))) scale(0.8);
+  }
+
+  .slide[data-pos="1"] {
+    transform: translateX(calc(-50% + var(--shift))) scale(0.8);
+  }
+
+  .slide[data-pos="-2"] {
+    transform: translateX(calc(-50% - var(--shift) * 2)) scale(0.66);
+  }
+
+  .slide[data-pos="2"] {
+    transform: translateX(calc(-50% + var(--shift) * 2)) scale(0.66);
+  }
+
+  .dots {
+    background: rgba(238, 242, 247, 0.08);
+  }
+
+  .dot span {
+    background: var(--color-ink);
+    opacity: 0.32;
+    transition: opacity 300ms ease;
+  }
+
+  .dot:hover span {
+    opacity: 0.6;
+  }
+
+  .dot[aria-current="true"] span {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-carousel]")) {
+    const slides = [...root.querySelectorAll<HTMLElement>("[data-slide]")];
+    const dots = [...root.querySelectorAll<HTMLButtonElement>("[data-dot]")];
+    const toggle = root.querySelector<HTMLButtonElement>("[data-toggle]");
+    const interval = Number(root.dataset.interval) || 5000;
+    const count = slides.length;
+    if (count < 2) continue;
+
+    let active = 0;
+    let timer: number | undefined;
+    let paused = reduce.matches;
+    let hovering = false;
+    let focused = false;
+    let visible = true;
+    let viewing = false;
+
+    const render = () => {
+      slides.forEach((slide, index) => {
+        const pos = String(Math.max(-2, Math.min(2, index - active)));
+        slide.dataset.pos = pos;
+        const front = pos === "0";
+        if (front) slide.removeAttribute("aria-hidden");
+        else slide.setAttribute("aria-hidden", "true");
+        slide.querySelector("[data-lightbox-trigger]")?.setAttribute("tabindex", front ? "0" : "-1");
+      });
+      dots.forEach((dot, index) => {
+        if (index === active) dot.setAttribute("aria-current", "true");
+        else dot.removeAttribute("aria-current");
+      });
+    };
+
+    const schedule = () => {
+      window.clearTimeout(timer);
+      if (paused || hovering || focused || viewing || !visible || document.hidden) return;
+      timer = window.setTimeout(() => go(active === count - 1 ? 0 : active + 1), interval);
+    };
+
+    const go = (index: number) => {
+      active = Math.max(0, Math.min(count - 1, index));
+      render();
+      schedule();
+    };
+
+    const setPaused = (value: boolean) => {
+      paused = value;
+      if (toggle) {
+        toggle.setAttribute("aria-label", paused ? "Play slideshow" : "Pause slideshow");
+        toggle.querySelector<SVGElement>('[data-icon="pause"]')?.toggleAttribute("hidden", paused);
+        toggle.querySelector<SVGElement>('[data-icon="play"]')?.toggleAttribute("hidden", !paused);
+      }
+      schedule();
+    };
+
+    dots.forEach((dot, index) => dot.addEventListener("click", () => go(index)));
+    toggle?.addEventListener("click", () => setPaused(!paused));
+
+    slides.forEach((slide, index) => {
+      slide.addEventListener("click", (event) => {
+        if (slide.dataset.pos === "0") return;
+        event.preventDefault();
+        go(index);
+      });
+    });
+
+    const slideOf = (event: Event) => slides.findIndex((slide) => slide.contains(event.target as Node));
+    root.addEventListener("lightbox:open", () => {
+      viewing = true;
+      schedule();
+    });
+    root.addEventListener("lightbox:change", (event) => go(slideOf(event)));
+    root.addEventListener("lightbox:close", () => {
+      viewing = false;
+      schedule();
+    });
+
+    root.addEventListener("pointerenter", (event) => {
+      if (event.pointerType === "mouse") {
+        hovering = true;
+        schedule();
+      }
+    });
+    root.addEventListener("pointerleave", () => {
+      hovering = false;
+      schedule();
+    });
+    root.addEventListener("focusin", () => {
+      focused = true;
+      schedule();
+    });
+    root.addEventListener("focusout", (event) => {
+      if (!root.contains(event.relatedTarget as Node | null)) {
+        focused = false;
+        schedule();
+      }
+    });
+    root.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") go(active - 1);
+      if (event.key === "ArrowRight") go(active + 1);
+    });
+
+    let startX: number | null = null;
+    let swiped = false;
+    const stage = root.querySelector<HTMLElement>(".stage");
+    stage?.addEventListener("pointerdown", (event) => {
+      if (event.pointerType !== "mouse") startX = event.clientX;
+    });
+    stage?.addEventListener("pointerup", (event) => {
+      if (startX === null) return;
+      const dx = event.clientX - startX;
+      startX = null;
+      swiped = Math.abs(dx) > 40;
+      if (swiped) go(active + (dx < 0 ? 1 : -1));
+    });
+    stage?.addEventListener(
+      "click",
+      (event) => {
+        if (!swiped) return;
+        swiped = false;
+        event.preventDefault();
+      },
+      true,
+    );
+
+    new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      schedule();
+    }).observe(root);
+    document.addEventListener("visibilitychange", schedule);
+    reduce.addEventListener("change", () => setPaused(reduce.matches));
+
+    setPaused(paused);
+    render();
+  }
+</script>

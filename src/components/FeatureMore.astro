@@ -1,0 +1,189 @@
+---
+import Media from "./Media.astro";
+import type { MoreFeatureView } from "../lib/more";
+
+interface Props {
+  items: MoreFeatureView[];
+}
+
+const { items } = Astro.props;
+const many = items.length > 1;
+---
+
+<article class="feature-panel grid gap-8 wide:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] wide:items-center" data-more>
+  <div class="relative">
+    <div class="more-stage relative aspect-[4/3] overflow-hidden rounded-[var(--radius-media)] bg-tint">
+      {
+        items.map((item, index) => (
+          <div class="more-frame absolute inset-0" data-more-frame hidden={index === 0 ? undefined : true}>
+            <Media
+              src={item.image}
+              alt={item.image ? item.title : ""}
+              ratio="aspect-[4/3]"
+              class="h-full !rounded-none"
+              label="Feature image · 4:3"
+              group={`more:${item.title}`}
+              title={item.title}
+            />
+          </div>
+        ))
+      }
+    </div>
+    {
+      many && (
+        <div class="pointer-events-none absolute inset-0 z-10">
+          <button
+            type="button"
+            data-prev
+            class="pointer-events-auto absolute left-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border border-line bg-bg/85 text-ink backdrop-blur-sm transition-colors hover:border-accent hover:text-accent"
+            aria-label="Previous feature"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            data-next
+            class="pointer-events-auto absolute right-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border border-line bg-bg/85 text-ink backdrop-blur-sm transition-colors hover:border-accent hover:text-accent"
+            aria-label="Next feature"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+      )
+    }
+  </div>
+  <div class="more-copy" data-more-copy>
+    {
+      items.map((item, index) => (
+        <div data-more-slide hidden={index === 0 ? undefined : true}>
+          <h3 class="section-title m-0">{item.title}</h3>
+          <p class="mt-4 text-[1.0625rem] leading-7 text-muted">{item.description}</p>
+        </div>
+      ))
+    }
+  </div>
+</article>
+
+<style>
+  .more-frame {
+    transition: transform 450ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .more-frame.is-instant {
+    transition: none;
+  }
+
+  .more-copy {
+    transition: opacity 200ms ease;
+  }
+
+  .more-copy.is-out {
+    opacity: 0;
+  }
+</style>
+
+<script>
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const fadeMs = 200;
+  const slideMs = 450;
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-more]")) {
+    const frames = [...root.querySelectorAll<HTMLElement>("[data-more-frame]")];
+    const slides = [...root.querySelectorAll<HTMLElement>("[data-more-slide]")];
+    const copy = root.querySelector<HTMLElement>("[data-more-copy]");
+    const prev = root.querySelector<HTMLButtonElement>("[data-prev]");
+    const next = root.querySelector<HTMLButtonElement>("[data-next]");
+    const count = Math.min(frames.length, slides.length);
+    if (count < 2 || !copy || !prev || !next) continue;
+
+    let active = frames.findIndex((frame) => !frame.hidden);
+    if (active < 0) active = 0;
+    let busy = false;
+    let pending = 0;
+
+    frames[active].style.transform = "translate3d(0, 0, 0)";
+
+    const park = (frame: HTMLElement, x: number) => {
+      frame.classList.add("is-instant");
+      frame.style.transform = `translate3d(${x}%, 0, 0)`;
+      void frame.offsetWidth;
+      frame.classList.remove("is-instant");
+    };
+
+    const finish = () => {
+      busy = false;
+      if (!pending) return;
+      const direction = pending;
+      pending = 0;
+      show(active + direction);
+    };
+
+    const show = (index: number) => {
+      const nextIndex = (index + count) % count;
+      if (nextIndex === active) return;
+      if (busy) {
+        pending = nextIndex === (active + 1) % count ? 1 : -1;
+        return;
+      }
+
+      const fromFrame = frames[active];
+      const toFrame = frames[nextIndex];
+      const fromSlide = slides[active];
+      const toSlide = slides[nextIndex];
+      const step = nextIndex === (active + 1) % count ? 1 : -1;
+
+      if (reduce.matches) {
+        fromFrame.hidden = true;
+        toFrame.hidden = false;
+        toFrame.style.transform = "translate3d(0, 0, 0)";
+        fromSlide.hidden = true;
+        toSlide.hidden = false;
+        active = nextIndex;
+        return;
+      }
+
+      busy = true;
+      toFrame.hidden = false;
+      toFrame.style.zIndex = "1";
+      fromFrame.style.zIndex = "0";
+      park(toFrame, step * 100);
+      fromFrame.style.transform = `translate3d(${step * -100}%, 0, 0)`;
+      toFrame.style.transform = "translate3d(0, 0, 0)";
+
+      copy.style.minHeight = `${copy.offsetHeight}px`;
+      copy.classList.add("is-out");
+
+      window.setTimeout(() => {
+        fromSlide.hidden = true;
+        toSlide.hidden = false;
+        copy.style.minHeight = `${toSlide.offsetHeight}px`;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => copy.classList.remove("is-out"));
+        });
+      }, fadeMs);
+
+      window.setTimeout(() => {
+        fromFrame.hidden = true;
+        fromFrame.style.zIndex = "";
+        toFrame.style.zIndex = "";
+        park(fromFrame, 0);
+        copy.style.minHeight = "";
+        active = nextIndex;
+        finish();
+      }, slideMs);
+    };
+
+    prev.addEventListener("click", (event) => {
+      event.stopPropagation();
+      show(active - 1);
+    });
+    next.addEventListener("click", (event) => {
+      event.stopPropagation();
+      show(active + 1);
+    });
+  }
+</script>

@@ -10,14 +10,14 @@ const { href, variant = "primary" } = Astro.props;
 const external = /^https?:/i.test(href);
 const classes =
   variant === "primary"
-    ? "bg-gold text-gold-ink hover:bg-[#ffe09a]"
-    : "border border-line text-ink hover:border-gold";
+    ? "bg-accent text-bg hover:bg-accent-bright"
+    : "border border-line-strong text-ink hover:border-ink";
 ---
 
 <a
   href={external ? href : withBase(href)}
   class:list={[
-    "inline-flex items-center justify-center px-5 py-3 text-sm font-medium tracking-wide rounded-sm",
+    "inline-flex h-11 items-center justify-center rounded-[var(--radius-control)] px-5 text-[0.9375rem] font-medium transition-colors",
     classes,
   ]}
 >

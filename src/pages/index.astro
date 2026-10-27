@@ -1,118 +1,157 @@
 ---
 import Base from "../layouts/Base.astro";
 import Button from "../components/Button.astro";
-import Frame from "../components/Frame.astro";
+import Media from "../components/Media.astro";
+import FeatureText from "../components/FeatureText.astro";
+import FeatureFrames from "../components/FeatureFrames.astro";
+import FeatureMore from "../components/FeatureMore.astro";
+import Carousel from "../components/Carousel.astro";
 import { site } from "../data/site";
-import { homeFeatures } from "../data/features";
-import { getGallery, getPosts } from "../lib/content";
+import { loadMore } from "../lib/more";
+import { loadFeatures } from "../lib/features";
+import { loadGameplay } from "../lib/gameplay";
+import { getGallery } from "../lib/content";
 import { withBase } from "../lib/paths";
+import AstroPlanet from "../components/AstroPlanet.astro";
 
-const gallery = await getGallery();
-const featured = gallery.filter((item) => item.data.featured);
-const hero = featured[0] ?? gallery[0];
-const posts = (await getPosts()).slice(0, 3);
+const shots = (await getGallery()).filter((item) => item.data.featured).slice(0, 3);
+const features = loadFeatures();
+const more = loadMore();
+const heroSlides = loadGameplay();
 ---
 
-<Base title={site.name} description={site.description}>
-  <section class="mx-auto grid max-w-6xl items-end gap-12 px-5 pb-8 pt-16 md:grid-cols-[minmax(0,34rem)_1fr] md:pt-24">
-    <div>
-      <p class="m-0 font-mono text-xs tracking-[0.18em] text-gold uppercase">Logic Planet</p>
-      <h1 class="mt-4 font-display text-5xl leading-[1.05] tracking-tight text-balance md:text-6xl">
-        Build circuits you can walk around.
+<Base title={site.name} description={site.description} flush={shots.length > 0}>
+  <section class="shell pt-12 sm:pt-14 lg:pt-16">
+    <div class="flex flex-wrap items-center gap-x-8 gap-y-6 lg:gap-x-10">
+      <h1 class="hero-title m-0 shrink-0">
+        Logic<br />Planet
       </h1>
-      <p class="mt-6 max-w-xl text-lg leading-8 text-muted">
-        A multiplayer sandbox for digital logic. Place parts in open space, wire them, and let a tick simulator run what you made.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <Button href={site.download}>Download</Button>
-        <Button href="/features" variant="secondary">See what runs</Button>
+      <AstroPlanet />
+      <div class="hero-copy">
+        <p class="m-0 text-[1.0625rem] leading-7 text-muted">
+          <span class="text-ink">Build circuits. Create computers. Go beyond.</span>{" "}
+          From simple logic gates to custom programmable systems, design, connect, and create your own digital world—one circuit at a time.
+        </p>
+        <div class="mt-7">
+          <Button href={site.download}>Download</Button>
+        </div>
       </div>
     </div>
-    {
-      hero && (
-        <Frame
-          src={hero.data.image}
-          alt={hero.data.alt}
-          label="Gameplay image"
-          caption="A placeholder stands in until a real screenshot is added to the gallery."
-          eager
-        />
-      )
-    }
+
   </section>
 
-  <section class="mx-auto max-w-6xl px-5 py-20">
-    <div class="max-w-2xl border-t border-line pt-10">
-      <h2 class="m-0 font-display text-3xl tracking-tight md:text-4xl">The world is the circuit.</h2>
-      <p class="mt-4 text-lg leading-8 text-muted">
-        You do not leave the world to edit a schematic. Boards, wires, chips, and the people you are building with are all in the same place.
-      </p>
+  <section class="mt-10 overflow-x-clip sm:mt-12">
+    <div class="shell">
+      <Carousel slides={heroSlides} label="Gameplay screenshots" />
+    </div>
+  </section>
+
+  <section id="features" class="shell scroll-mt-20 pt-20 sm:pt-28">
+    <div class="flex items-baseline justify-between border-b border-line pb-5">
+      <h2 class="section-label m-0">Features</h2>
     </div>
 
-    <div class="mt-16 flex flex-col gap-20">
+    <div class="mt-10 grid gap-4 wide:grid-cols-12 wide:gap-5">
       {
-        homeFeatures.map((feature, index) => (
-          <article class:list={["grid items-center gap-8 md:grid-cols-2 md:gap-14", index % 2 === 1 && "md:[&>*:first-child]:order-2"]}>
-            <Frame src={feature.image} alt={feature.imageAlt} label={feature.eyebrow} />
-            <div class="max-w-md">
-              <p class="m-0 font-mono text-xs tracking-[0.16em] text-gold uppercase">{feature.eyebrow}</p>
-              <h3 class="mt-3 font-display text-3xl tracking-tight">{feature.title}</h3>
-              <p class="mt-4 leading-7 text-muted">{feature.body}</p>
-            </div>
-          </article>
-        ))
+        features.map((feature) => {
+          if (feature.layout === "lead" || feature.layout === "mirror") {
+            const mirrored = feature.layout === "mirror";
+            return (
+              <article
+                class:list={[
+                  "feature-panel grid gap-8 wide:col-span-12 wide:items-center",
+                  mirrored
+                    ? "wide:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]"
+                    : "wide:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]",
+                ]}
+              >
+                <div class:list={[mirrored && "wide:col-start-2 wide:row-start-1"]}>
+                  <FeatureFrames images={feature.images} title={feature.title} label="Feature image · 4:3" ratio="aspect-[4/3]" />
+                </div>
+                <div class:list={[mirrored && "wide:col-start-1 wide:row-start-1"]}>
+                  <FeatureText feature={feature} size="large" />
+                </div>
+              </article>
+            );
+          }
+          if (feature.layout === "card" || feature.layout === "card-top") {
+            const frames = (
+              <FeatureFrames images={feature.images} title={feature.title} label="Feature image · 4:3" ratio="aspect-[4/3]" />
+            );
+            const copy = <FeatureText feature={feature} />;
+            return (
+              <article class="feature-panel flex flex-col gap-7 wide:col-span-6">
+                {feature.layout === "card-top" ? copy : frames}
+                {feature.layout === "card-top" ? frames : copy}
+              </article>
+            );
+          }
+          if (feature.layout === "tall") {
+            return (
+              <article class="wide:col-span-5">
+                <FeatureFrames images={feature.images} title={feature.title} label="Feature image · 4:5" ratio="aspect-[4/5]" />
+                <div class="mt-7">
+                  <FeatureText feature={feature} />
+                </div>
+              </article>
+            );
+          }
+          if (feature.layout === "offset") {
+            return (
+              <article class="wide:col-span-6 wide:col-start-7 wide:pt-16">
+                <FeatureFrames images={feature.images} title={feature.title} label="Feature image · 4:3" ratio="aspect-[4/3]" />
+                <div class="mt-7">
+                  <FeatureText feature={feature} />
+                </div>
+              </article>
+            );
+          }
+          return (
+            <article class="wide:col-span-12">
+              <FeatureFrames images={feature.images} title={feature.title} label="Feature image · 21:9" ratio="aspect-[4/3] sm:aspect-[21/9]" />
+              <div class="mt-8 max-w-xl">
+                <FeatureText feature={feature} />
+              </div>
+            </article>
+          );
+        })
       }
     </div>
   </section>
 
-  {
-    gallery.length > 0 && (
-      <section class="border-t border-line">
-        <div class="mx-auto max-w-6xl px-5 py-20">
-          <div class="flex items-end justify-between gap-6">
-            <h2 class="m-0 font-display text-3xl tracking-tight">From the gallery</h2>
-            <a href={withBase("/gallery")} class="text-sm text-gold">
-              All images
-            </a>
-          </div>
-          <ul class="mt-10 grid list-none gap-10 p-0 md:grid-cols-[1.4fr_0.8fr]">
-            {
-              gallery.map((item, index) => (
-                <li class:list={[index === 0 && "md:row-span-2"]}>
-                  <a href={withBase(`/gallery/${item.id}`)} class="group block">
-                    <Frame src={item.data.image} alt={item.data.alt} label={item.data.category} />
-                    <h3 class="mt-4 font-display text-2xl group-hover:text-gold">{item.data.title}</h3>
-                    <p class="mt-2 text-sm leading-6 text-muted">{item.data.description}</p>
-                  </a>
-                </li>
-              ))
-            }
-          </ul>
-        </div>
-      </section>
-    )
-  }
+  <section id="more" class="shell scroll-mt-20 pt-20 sm:pt-28">
+    <div class="flex items-baseline justify-between border-b border-line pb-5">
+      <h2 class="section-label m-0">And Much More</h2>
+    </div>
+    <div class="mt-10">
+      <FeatureMore items={more} />
+    </div>
+  </section>
 
   {
-    posts.length > 0 && (
-      <section class="border-t border-line">
-        <div class="mx-auto max-w-6xl px-5 py-20">
-          <div class="flex items-end justify-between gap-6">
-            <h2 class="m-0 font-display text-3xl tracking-tight">Development</h2>
-            <a href={withBase("/blog")} class="text-sm text-gold">
-              All notes
+    shots.length > 0 && (
+      <section class="mt-20 border-t border-line bg-raised py-16 sm:mt-28 sm:py-20">
+        <div class="shell">
+          <div class="flex items-baseline justify-between">
+            <h2 class="section-label m-0">Gallery</h2>
+            <a href={withBase("/gallery")} class="text-[0.9375rem] text-accent hover:underline hover:underline-offset-4">
+              All screenshots
             </a>
           </div>
-          <ul class="mt-10 grid list-none gap-8 p-0 md:grid-cols-3">
-            {posts.map((post) => (
-              <li>
-                <a href={withBase(`/blog/${post.id}`)} class="block">
-                  <p class="m-0 font-mono text-xs text-faint">
-                    {post.data.date.toLocaleDateString("en", { dateStyle: "long" })}
-                  </p>
-                  <h3 class="mt-2 font-display text-xl">{post.data.title}</h3>
-                  <p class="mt-2 text-sm leading-6 text-muted">{post.data.excerpt}</p>
-                </a>
+          <ul class="mt-8 grid list-none gap-4 p-0 sm:gap-5 wide:grid-cols-12">
+            {shots.map((shot, index) => (
+              <li class:list={[index === 0 ? "wide:col-span-8 wide:row-span-2" : "wide:col-span-4"]}>
+                <Media
+                  src={shot.data.image}
+                  alt={shot.data.alt}
+                  label={shot.data.title}
+                  group="home-gallery"
+                  title={shot.data.title}
+                  category={shot.data.category}
+                  caption={shot.data.description}
+                  ratio={index === 0 ? "aspect-[4/3] wide:aspect-auto wide:h-full" : "aspect-[4/3]"}
+                  class="transition-shadow hover:shadow-[var(--shadow-media)]"
+                />
               </li>
             ))}
           </ul>
@@ -120,16 +159,4 @@ const posts = (await getPosts()).slice(0, 3);
       </section>
     )
   }
-
-  <section class="border-t border-line">
-    <div class="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-20 md:flex-row md:items-end md:justify-between">
-      <div class="max-w-xl">
-        <h2 class="m-0 font-display text-4xl tracking-tight">Get the current build.</h2>
-        <p class="mt-4 leading-7 text-muted">
-          Releases are published on GitHub. The game is still changing, and each release is the build that is up there now.
-        </p>
-      </div>
-      <Button href={site.download}>Download</Button>
-    </div>
-  </section>
 </Base>

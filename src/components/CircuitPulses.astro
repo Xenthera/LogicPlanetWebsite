@@ -1,0 +1,457 @@
+---
+import { withBase } from "../lib/paths";
+---
+
+<div class="circuit-pulses" aria-hidden="true">
+  <canvas data-src={withBase("/circuit/paths.json")}></canvas>
+</div>
+
+<style>
+  /* inset stretches to the body, so this layer scrolls with the board and
+     cannot make the page longer. */
+  .circuit-pulses {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .circuit-pulses canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+  }
+</style>
+
+<script>
+  type Path = { pts: number[]; acc: number[]; len: number; box: [number, number, number, number] };
+  type Color = { tail: string; head: string; weight: number };
+  type Pulse = { path: Path; ox: number; oy: number; s: number; speed: number; tail: number; dir: 1 | -1; color: Color };
+
+  // Gold stays the most common so the site accent still leads.
+  const COLORS: Color[] = [
+    { tail: "245,201,107", head: "255,224,150", weight: 5 },
+    { tail: "107,211,245", head: "170,232,255", weight: 2 },
+    { tail: "120,224,160", head: "180,245,205", weight: 2 },
+    { tail: "196,150,245", head: "225,200,255", weight: 1 },
+    { tail: "245,130,110", head: "255,190,175", weight: 1 },
+  ];
+  const totalWeight = COLORS.reduce((sum, c) => sum + c.weight, 0);
+  const pickColor = () => {
+    let r = Math.random() * totalWeight;
+    for (const c of COLORS) if ((r -= c.weight) < 0) return c;
+    return COLORS[0];
+  };
+
+  const canvas = document.querySelector<HTMLCanvasElement>(".circuit-pulses canvas");
+  const motionOk = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (canvas && motionOk) start(canvas);
+
+  async function start(canvas: HTMLCanvasElement) {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    let data: { w: number; h: number; paths: number[][] };
+    try {
+      data = await fetch(canvas.dataset.src!).then((res) => res.json());
+    } catch {
+      return;
+    }
+    const TW = data.w;
+    const TH = data.h;
+    const paths: Path[] = data.paths.map((pts) => {
+      const acc = [0];
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (let i = 0; i < pts.length; i += 2) {
+        x0 = Math.min(x0, pts[i]); x1 = Math.max(x1, pts[i]);
+        y0 = Math.min(y0, pts[i + 1]); y1 = Math.max(y1, pts[i + 1]);
+        if (i) acc.push(acc[acc.length - 1] + Math.hypot(pts[i] - pts[i - 2], pts[i + 1] - pts[i - 1]));
+      }
+      return { pts, acc, len: acc[acc.length - 1], box: [x0, y0, x1, y1] };
+    });
+
+    // The canvas lives in the document, so the browser scrolls it with the board.
+    // Its bitmap is only moved when the viewport leaves it, never on each scroll tick.
+    const layer = canvas.parentElement!;
+    const MAX_PIXELS = 16_000_000;
+    let vw = 0, vh = 0, dpr = 1, anchor = 0, cover = 0, docH = 0;
+
+    // Size from the layer, which already matches the page, so the bitmap can't grow it.
+    const measure = () => {
+      vw = layer.clientWidth || document.documentElement.clientWidth;
+      vh = window.visualViewport?.height ?? window.innerHeight;
+      docH = Math.max(layer.clientHeight, vh);
+      const native = Math.min(window.devicePixelRatio || 1, 2);
+      const scale = vw * docH * native * native <= MAX_PIXELS ? native : 1;
+      let height = docH;
+      if (vw * height * scale * scale > MAX_PIXELS)
+        height = Math.min(docH, Math.max(vh * 3, Math.floor(MAX_PIXELS / (vw * scale * scale))));
+      const top = height < docH ? Math.max(0, Math.min(window.scrollY - vh, docH - height)) : 0;
+      anchor = top;
+      cover = height;
+      dpr = scale;
+      canvas.style.top = `${top}px`;
+      canvas.style.height = `${height}px`;
+      canvas.width = Math.round(Math.max(1, vw) * dpr);
+      canvas.height = Math.round(height * dpr);
+    };
+
+    // Slide the bitmap only once the viewport has left its middle band.
+    const follow = () => {
+      if (cover >= docH - 1) return;
+      const sy = window.scrollY;
+      if (sy >= anchor + vh * 0.75 && sy <= anchor + cover - vh * 1.75) return;
+      const top = Math.max(0, Math.min(sy - vh, docH - cover));
+      if (top === anchor) return;
+      anchor = top;
+      canvas.style.top = `${top}px`;
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    new ResizeObserver(measure).observe(layer);
+
+    // Neighboring chip pins whose traces leave side by side, like a data bus.
+    type Bus = { path: Path; dir: 1 | -1 }[];
+    const buses: Bus[] = [];
+    {
+      type End = { path: Path; dir: 1 | -1; x: number; y: number; axis: 0 | 1; sign: number };
+      const ends: End[] = [];
+      for (const path of paths) {
+        const count = path.pts.length / 2;
+        if (count < 3 || path.len < 48) continue;
+        for (const fromStart of [true, false]) {
+          const i = fromStart ? 0 : count - 1;
+          const j = fromStart ? 1 : count - 2;
+          const x = path.pts[i * 2];
+          const y = path.pts[i * 2 + 1];
+          const dx = path.pts[j * 2] - x;
+          const dy = path.pts[j * 2 + 1] - y;
+          let axis: 0 | 1;
+          let sign: number;
+          if (Math.abs(dx) > Math.abs(dy) * 2 && Math.abs(dx) >= 6) {
+            axis = 0;
+            sign = Math.sign(dx);
+          } else if (Math.abs(dy) > Math.abs(dx) * 2 && Math.abs(dy) >= 6) {
+            axis = 1;
+            sign = Math.sign(dy);
+          } else continue;
+          ends.push({ path, dir: fromStart ? 1 : -1, x, y, axis, sign });
+        }
+      }
+      const groups = new Map<string, End[]>();
+      for (const end of ends) {
+        const along = end.axis === 0 ? end.x : end.y;
+        const key = `${end.axis}:${end.sign}:${end.dir}:${Math.round(along / 12)}`;
+        const list = groups.get(key);
+        if (list) list.push(end);
+        else groups.set(key, [end]);
+      }
+      for (const list of groups.values()) {
+        list.sort((a, b) => (a.axis === 0 ? a.y - b.y : a.x - b.x));
+        let run: End[] = [];
+        const flush = () => {
+          if (run.length >= 3) buses.push(run.map((end) => ({ path: end.path, dir: end.dir })));
+          run = [];
+        };
+        for (const end of list) {
+          const prev = run[run.length - 1];
+          const gap = prev ? (end.axis === 0 ? end.y - prev.y : end.x - prev.x) : 0;
+          if (prev && (gap < 12 || gap > 22 || prev.path === end.path)) flush();
+          run.push(end);
+        }
+        flush();
+      }
+    }
+
+    function spawn(): Pulse | null {
+      const sx = window.scrollX;
+      const sy = window.scrollY;
+      for (let tries = 0; tries < 24; tries++) {
+        const path = paths[(Math.random() * paths.length) | 0];
+        const kx = Math.floor((sx + Math.random() * vw) / TW);
+        const ky = Math.floor((sy + Math.random() * vh) / TH);
+        const ox = kx * TW;
+        const oy = ky * TH;
+        const [bx0, by0, bx1, by1] = path.box;
+        if (ox + bx1 < sx || ox + bx0 > sx + vw || oy + by1 < sy || oy + by0 > sy + vh) continue;
+        return {
+          path, ox, oy,
+          s: 0,
+          speed: 120 + Math.random() * 180,
+          tail: 60 + Math.random() * 80,
+          dir: Math.random() < 0.5 ? 1 : -1,
+          color: pickColor(),
+        };
+      }
+      return null;
+    }
+
+    // A few parallel pins leave together, one color, one speed, like a bus cycle.
+    function spawnBus(): Pulse[] | null {
+      if (!buses.length) return null;
+      const sx = window.scrollX;
+      const sy = window.scrollY;
+      for (let tries = 0; tries < 24; tries++) {
+        const bus = buses[(Math.random() * buses.length) | 0];
+        const take = Math.min(bus.length, 3 + ((Math.random() * 2) | 0));
+        const startAt = (Math.random() * (bus.length - take + 1)) | 0;
+        const members = bus.slice(startAt, startAt + take);
+        const lead = members[0].path;
+        const pin = members[0].dir === 1 ? 0 : lead.pts.length - 2;
+        const x = lead.pts[pin];
+        const y = lead.pts[pin + 1];
+        const ox = Math.floor((sx + Math.random() * vw - x) / TW) * TW;
+        const oy = Math.floor((sy + Math.random() * vh - y) / TH) * TH;
+        if (ox + x < sx + 24 || ox + x > sx + vw - 24 || oy + y < sy + 24 || oy + y > sy + vh - 24) continue;
+        const color = pickColor();
+        const speed = 140 + Math.random() * 120;
+        const tail = 80 + Math.random() * 50;
+        return members.map((member) => ({
+          path: member.path,
+          ox,
+          oy,
+          s: 0,
+          speed,
+          tail,
+          dir: member.dir,
+          color,
+        }));
+      }
+      return null;
+    }
+
+    function pointAt(path: Path, d: number): [number, number] {
+      const { pts, acc } = path;
+      d = Math.max(0, Math.min(path.len, d));
+      let i = 1;
+      while (i < acc.length - 1 && acc[i] < d) i++;
+      const seg = acc[i] - acc[i - 1] || 1;
+      const t = (d - acc[i - 1]) / seg;
+      const a = (i - 1) * 2;
+      return [pts[a] + (pts[a + 2] - pts[a]) * t, pts[a + 1] + (pts[a + 3] - pts[a + 1]) * t];
+    }
+
+    // Points along the direction of travel. `dist` is pixels from the tail, so a
+    // short corner takes the same time per pixel as a long straight run.
+    function trailPoints(path: Path, from: number, to: number, dir: 1 | -1) {
+      const len = path.len;
+      const start = Math.max(0, from);
+      const end = Math.min(to, len);
+      if (end - start < 0.5) return null;
+      const marks = [start, end];
+      for (const dist of path.acc) {
+        const along = dir === 1 ? dist : len - dist;
+        if (along > start && along < end) marks.push(along);
+      }
+      marks.sort((a, b) => a - b);
+      const pts: number[][] = [];
+      const dist: number[] = [];
+      let prev = -1;
+      for (const mark of marks) {
+        if (mark - prev < 0.4) continue;
+        prev = mark;
+        dist.push(mark - start);
+        pts.push(pointAt(path, dir === 1 ? mark : len - mark));
+      }
+      return { pts, dist };
+    }
+
+    const WIDTH = 1.6;
+    // Coverage is one continuous stroke. Color is written into those pixels
+    // afterward, so a 45° chamfer cannot be painted twice and bloom.
+    const scratch = document.createElement("canvas");
+    const scratchCtx = scratch.getContext("2d")!;
+
+    function strokeTrail(trail: { pts: number[][]; dist: number[] }, color: Color, fade: number, ox: number, oy: number) {
+      const { pts, dist } = trail;
+      const local: number[][] = [];
+      const along: number[] = [];
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (let i = 0; i < pts.length; i++) {
+        const x = ox + pts[i][0];
+        const y = oy + pts[i][1] - anchor;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+        if (local.length) {
+          const prev = local[local.length - 1];
+          if (Math.hypot(x - prev[0], y - prev[1]) < 0.4) continue;
+        }
+        local.push([x, y]);
+        along.push(dist[i]);
+      }
+      if (local.length < 2) return;
+      const pad = 3;
+      const originX = minX - pad;
+      const originY = minY - pad;
+      for (const p of local) {
+        p[0] -= originX;
+        p[1] -= originY;
+      }
+      const w = Math.ceil(maxX - minX + pad * 2);
+      const h = Math.ceil(maxY - minY + pad * 2);
+      const scale = dpr;
+      const bw = Math.ceil(w * scale);
+      const bh = Math.ceil(h * scale);
+      if (scratch.width < bw || scratch.height < bh) {
+        scratch.width = Math.max(scratch.width, bw);
+        scratch.height = Math.max(scratch.height, bh);
+      }
+      scratchCtx.setTransform(1, 0, 0, 1, 0, 0);
+      scratchCtx.clearRect(0, 0, bw, bh);
+      scratchCtx.setTransform(scale, 0, 0, scale, 0, 0);
+      scratchCtx.lineWidth = WIDTH;
+      scratchCtx.lineCap = "butt";
+      scratchCtx.lineJoin = "round";
+      scratchCtx.strokeStyle = "#fff";
+      scratchCtx.globalAlpha = 1;
+      scratchCtx.globalCompositeOperation = "source-over";
+      scratchCtx.beginPath();
+      scratchCtx.moveTo(local[0][0], local[0][1]);
+      for (let i = 1; i < local.length; i++) scratchCtx.lineTo(local[i][0], local[i][1]);
+      scratchCtx.stroke();
+
+      const image = scratchCtx.getImageData(0, 0, bw, bh);
+      const data = image.data;
+      const total = along[along.length - 1] || 1;
+      const tail = color.tail.split(",").map(Number);
+      const head = color.head.split(",").map(Number);
+      const segs: number[][] = [];
+      for (let i = 0; i < local.length - 1; i++) {
+        const ax = local[i][0];
+        const ay = local[i][1];
+        const bx = local[i + 1][0];
+        const by = local[i + 1][1];
+        const dx = bx - ax;
+        const dy = by - ay;
+        const len2 = dx * dx + dy * dy;
+        if (len2 < 0.01) continue;
+        segs.push([ax, ay, dx, dy, len2, along[i], along[i + 1]]);
+      }
+      for (let py = 0; py < bh; py++) {
+        for (let px = 0; px < bw; px++) {
+          const i = (py * bw + px) * 4;
+          const coverage = data[i + 3];
+          if (!coverage) continue;
+          const x = (px + 0.5) / scale;
+          const y = (py + 0.5) / scale;
+          let best = Infinity;
+          let traveled = 0;
+          for (const [ax, ay, dx, dy, len2, d0, d1] of segs) {
+            let u = ((x - ax) * dx + (y - ay) * dy) / len2;
+            if (u < 0) u = 0;
+            else if (u > 1) u = 1;
+            const qx = ax + dx * u - x;
+            const qy = ay + dy * u - y;
+            const dist2 = qx * qx + qy * qy;
+            if (dist2 < best) {
+              best = dist2;
+              traveled = d0 + (d1 - d0) * u;
+            }
+          }
+          const t = traveled / total;
+          const tip = Math.max(0, (t - 0.72) / 0.28);
+          const rgb = tip > 0 ? tail.map((value, k) => value + (head[k] - value) * tip) : tail;
+          data[i] = rgb[0];
+          data[i + 1] = rgb[1];
+          data[i + 2] = rgb[2];
+          data[i + 3] = Math.round(coverage * Math.pow(t, 0.75) * 0.5 * fade);
+        }
+      }
+      scratchCtx.setTransform(1, 0, 0, 1, 0, 0);
+      scratchCtx.putImageData(image, 0, 0);
+      ctx!.drawImage(scratch, 0, 0, bw, bh, originX, originY, bw / scale, bh / scale);
+    }
+
+    function paint() {
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx!.clearRect(0, 0, vw, cover);
+      for (let i = pulses.length - 1; i >= 0; i--) {
+        const p = pulses[i];
+        const head = Math.min(p.s, p.path.len);
+        const fade = Math.min(1, p.s / 12, (p.path.len + p.tail - p.s) / 12);
+        const trail = trailPoints(p.path, p.s - p.tail, head, p.dir);
+        if (trail && trail.pts.length > 1) strokeTrail(trail, p.color, fade, p.ox, p.oy);
+      }
+    }
+
+    const pulses: Pulse[] = [];
+    let spawnIn = 0;
+    let busIn = (0.6 + Math.random() * 0.8) / 0.75;
+    let last = 0;
+    let frame = 0;
+    let scrolling = false;
+    let scrollTimer = 0;
+    // Leave the bitmap alone while the page is moving. It scrolls with the board,
+    // and iOS flickers a canvas that is cleared on every scroll frame.
+    window.addEventListener(
+      "scroll",
+      () => {
+        scrolling = true;
+        clearTimeout(scrollTimer);
+        scrollTimer = window.setTimeout(() => {
+          scrolling = false;
+        }, 140);
+      },
+      { passive: true },
+    );
+
+    function tick(now: number) {
+      if (scrolling) {
+        last = now;
+        frame = requestAnimationFrame(tick);
+        return;
+      }
+      const dt = Math.min(0.05, (now - last) / 1000 || 0);
+      last = now;
+      const area = vw * vh;
+      const cap = Math.max(9, Math.min(63, Math.round((area / 25000) * 0.75)));
+      spawnIn -= dt;
+      while (spawnIn <= 0 && pulses.length < cap) {
+        const p = spawn();
+        if (p) pulses.push(p);
+        spawnIn += ((0.5 + Math.random()) * (40000 / 0.75)) / area;
+      }
+      spawnIn = Math.max(spawnIn, -0.5);
+      busIn -= dt;
+      if (busIn <= 0) {
+        const group = spawnBus();
+        if (group) {
+          for (const pulse of group) if (pulses.length < cap + 15) pulses.push(pulse);
+          busIn = (1.2 + Math.random() * 1.4) / 0.75;
+        } else busIn = (0.18 + Math.random() * 0.2) / 0.75;
+      }
+
+      for (let i = pulses.length - 1; i >= 0; i--) {
+        const p = pulses[i];
+        p.s += p.speed * dt;
+        if (p.s > p.path.len + p.tail) pulses.splice(i, 1);
+      }
+      follow();
+      paint();
+      frame = requestAnimationFrame(tick);
+    }
+
+    const run = () => {
+      cancelAnimationFrame(frame);
+      if (document.hidden) return;
+      last = performance.now();
+      frame = requestAnimationFrame(tick);
+    };
+    document.addEventListener("visibilitychange", run);
+    run();
+  }
+
+  function mix(a: string, b: string, t: number) {
+    const from = a.split(",").map(Number);
+    const to = b.split(",").map(Number);
+    return from.map((value, i) => Math.round(value + (to[i] - value) * t)).join(",");
+  }
+</script>

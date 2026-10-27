@@ -11,6 +11,8 @@ export default defineConfig({
   site: process.env.SITE_URL || 'https://xenthera.github.io',
   base,
   output: 'static',
+  // Listen on all interfaces so `npm run dev` and `npm run preview` are reachable from other devices on the LAN.
+  server: { host: true, port: 4321 },
   vite: {
     plugins: [tailwindcss()],
   },

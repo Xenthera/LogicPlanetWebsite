@@ -1,0 +1,88 @@
+---
+import { withBase } from "../lib/paths";
+
+interface Props {
+  src?: string;
+  alt?: string;
+  /** Shown inside the empty frame when there is no image yet. */
+  label?: string;
+  /** Tailwind aspect class, for example "aspect-video". */
+  ratio?: string;
+  eager?: boolean;
+  class?: string;
+  /** Opens the frame in the lightbox when clicked. */
+  expand?: boolean;
+  /** Frames sharing a group can be paged through in the lightbox. */
+  group?: string;
+  title?: string;
+  category?: string;
+  caption?: string;
+}
+
+const {
+  src,
+  alt = "",
+  label = "Image",
+  ratio = "aspect-[16/10]",
+  eager = false,
+  class: className,
+  expand = true,
+  group,
+  title,
+  category,
+  caption,
+} = Astro.props;
+
+const url = src ? withBase(src) : undefined;
+---
+
+<div
+  class:list={[
+    "media-frame group/media relative overflow-hidden rounded-[var(--radius-media)] bg-tint",
+    ratio,
+    className,
+  ]}
+>
+  {
+    url ? (
+      <img
+        src={url}
+        alt={alt}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        class:list={[
+          "absolute inset-0 h-full w-full object-cover",
+          expand && "transition-transform duration-500 ease-out group-hover/media:scale-[1.015]",
+        ]}
+      />
+    ) : (
+      <div data-placeholder class="absolute inset-0 grid place-items-center" aria-hidden="true">
+        <div
+          class:list={[
+            "pointer-events-none absolute inset-3 rounded-[10px] border border-dashed border-line-strong sm:inset-4",
+            expand && "transition-colors group-hover/media:border-faint",
+          ]}
+        >
+        </div>
+        <span class="label relative px-4 text-center">{label}</span>
+      </div>
+    )
+  }
+  {
+    expand && (
+      <button
+        type="button"
+        data-lightbox-trigger
+        data-src={url}
+        data-alt={alt}
+        data-label={label}
+        data-group={group}
+        data-title={title}
+        data-category={category}
+        data-caption={caption}
+        class="absolute inset-0 cursor-zoom-in rounded-[var(--radius-media)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        aria-label={`View ${title || alt || label} larger`}
+      />
+    )
+  }
+</div>

@@ -4,12 +4,11 @@ import Button from "../components/Button.astro";
 ---
 
 <Base title="Page not found" description="That page is not on this site.">
-  <section class="mx-auto max-w-6xl px-5 py-24">
-    <p class="m-0 font-mono text-xs tracking-[0.18em] text-gold uppercase">404</p>
-    <h1 class="mt-4 font-display text-5xl tracking-tight">That page is not here.</h1>
-    <p class="mt-4 max-w-md leading-7 text-muted">The address does not match a page on this site.</p>
+  <section class="shell pt-16 sm:pt-24">
+    <p class="label m-0">404</p>
+    <h1 class="section-title mt-4">Page not found.</h1>
     <div class="mt-8">
-      <Button href="/">Back home</Button>
+      <Button href="/" variant="secondary">Back home</Button>
     </div>
   </section>
 </Base>

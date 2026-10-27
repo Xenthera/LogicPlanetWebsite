@@ -1,0 +1,50 @@
+---
+import { withBase } from "../lib/paths";
+import type { Feature } from "../data/showcase";
+
+interface Props {
+  feature: Feature;
+  size?: "large" | "small";
+}
+
+const { feature, size = "small" } = Astro.props;
+const titleClass = size === "large" ? "section-title" : "font-display text-[1.5rem] leading-tight tracking-[-0.02em]";
+---
+
+<div>
+  {
+    feature.title ? (
+      <h3 class:list={["m-0", titleClass]}>{feature.title}</h3>
+    ) : (
+      <div
+        data-placeholder
+        aria-hidden="true"
+        class:list={["flex items-center rounded-md bg-tint px-3", size === "large" ? "h-12 w-4/5" : "h-9 w-3/5"]}
+      >
+        <span class="label">Title</span>
+      </div>
+    )
+  }
+  {
+    feature.description ? (
+      <p class="mt-4 text-[1.0625rem] leading-7 text-muted">{feature.description}</p>
+    ) : (
+      <div data-placeholder aria-hidden="true" class="mt-5 flex flex-col gap-2.5">
+        <span class="h-3 w-full rounded-full bg-tint"></span>
+        <span class="h-3 w-11/12 rounded-full bg-tint"></span>
+        <span class="h-3 w-2/3 rounded-full bg-tint"></span>
+      </div>
+    )
+  }
+  {
+    feature.link && (
+      <a
+        href={withBase(feature.link.href)}
+        class="mt-5 inline-flex items-center gap-1.5 text-[0.9375rem] font-medium text-accent hover:underline hover:underline-offset-4"
+      >
+        {feature.link.label}
+        <span aria-hidden="true">→</span>
+      </a>
+    )
+  }
+</div>

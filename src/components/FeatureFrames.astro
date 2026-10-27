@@ -1,0 +1,165 @@
+---
+import Media from "./Media.astro";
+import type { FeatureImage } from "../lib/features";
+
+interface Props {
+  images: FeatureImage[];
+  ratio: string;
+  label: string;
+  title?: string;
+}
+
+const { images, ratio, label, title } = Astro.props;
+const many = images.length > 1;
+---
+
+<div class="feature-frames relative" data-frames>
+  <div class:list={["relative overflow-hidden rounded-[var(--radius-media)] bg-tint", ratio]}>
+    {
+      images.map((image, index) => (
+        <div class="frame-slide absolute inset-0" data-frame hidden={index === 0 ? undefined : true}>
+          <Media
+            src={image.src}
+            alt={image.alt}
+            ratio={ratio}
+            class="h-full !rounded-none"
+            group={title ? `feature:${title}` : "features"}
+            title={title}
+            label={many ? label.replace("Feature image", `Feature image ${index + 1}`) : label}
+          />
+        </div>
+      ))
+    }
+  </div>
+  {
+    many && (
+      <div class="pointer-events-none absolute inset-0 z-10">
+        <button
+          type="button"
+          data-prev
+          class="nav pointer-events-auto absolute left-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border border-line bg-bg/85 text-ink backdrop-blur-sm transition-colors hover:border-accent hover:text-accent"
+          aria-label={title ? `Previous ${title} image` : "Previous image"}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-next
+          class="nav pointer-events-auto absolute right-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border border-line bg-bg/85 text-ink backdrop-blur-sm transition-colors hover:border-accent hover:text-accent"
+          aria-label={title ? `Next ${title} image` : "Next image"}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .frame-slide {
+    transition: transform 450ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .frame-slide.is-instant {
+    transition: none;
+  }
+</style>
+
+<script>
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const slideMs = 450;
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-frames]")) {
+    const frames = [...root.querySelectorAll<HTMLElement>("[data-frame]")];
+    const prev = root.querySelector<HTMLButtonElement>("[data-prev]");
+    const next = root.querySelector<HTMLButtonElement>("[data-next]");
+    if (frames.length < 2 || !prev || !next) continue;
+
+    let active = frames.findIndex((frame) => !frame.hidden);
+    if (active < 0) active = 0;
+    let busy = false;
+    let pending = 0;
+
+    frames[active].style.transform = "translate3d(0, 0, 0)";
+
+    const park = (frame: HTMLElement, x: number) => {
+      frame.classList.add("is-instant");
+      frame.style.transform = `translate3d(${x}%, 0, 0)`;
+      void frame.offsetWidth;
+      frame.classList.remove("is-instant");
+    };
+
+    const jump = (index: number) => {
+      frames.forEach((frame, at) => {
+        const on = at === index;
+        frame.hidden = !on;
+        frame.style.zIndex = "";
+        if (on) frame.style.transform = "translate3d(0, 0, 0)";
+      });
+      active = index;
+      busy = false;
+      pending = 0;
+    };
+
+    const finish = () => {
+      busy = false;
+      if (!pending) return;
+      const direction = pending;
+      pending = 0;
+      show(active + direction);
+    };
+
+    const show = (index: number, immediate = false) => {
+      const count = frames.length;
+      const nextIndex = (index + count) % count;
+      if (nextIndex === active) return;
+      const step = nextIndex === (active + 1) % count ? 1 : -1;
+      if (immediate || reduce.matches) {
+        jump(nextIndex);
+        return;
+      }
+      if (busy) {
+        pending = step;
+        return;
+      }
+
+      const from = frames[active];
+      const to = frames[nextIndex];
+      busy = true;
+      to.hidden = false;
+      to.style.zIndex = "1";
+      from.style.zIndex = "0";
+      park(to, step * 100);
+      from.style.transform = `translate3d(${step * -100}%, 0, 0)`;
+      to.style.transform = "translate3d(0, 0, 0)";
+
+      window.setTimeout(() => {
+        if (!busy) return;
+        from.hidden = true;
+        from.style.zIndex = "";
+        to.style.zIndex = "";
+        park(from, 0);
+        active = nextIndex;
+        finish();
+      }, slideMs);
+    };
+
+    prev.addEventListener("click", (event) => {
+      event.stopPropagation();
+      show(active - 1);
+    });
+    next.addEventListener("click", (event) => {
+      event.stopPropagation();
+      show(active + 1);
+    });
+
+    root.addEventListener("lightbox:change", (event) => {
+      const at = frames.findIndex((frame) => frame.contains(event.target as Node));
+      if (at >= 0) show(at, true);
+    });
+  }
+</script>

@@ -1,7 +1,9 @@
 export const site = {
   name: "Logic Planet",
-  tagline: "A multiplayer sandbox for digital logic.",
+  // From the Logic Planet README.
+  tagline: "A 3D circuit sandbox.",
   description:
-    "Place parts in open space, wire them, and run the circuit. Logic Planet is a multiplayer world for building digital logic.",
-  download: "https://github.com/Xenthera/LogicPlanetReleases/releases/",
+    "Build circuits. Create computers. Go beyond. From simple logic gates to custom programmable systems, design, connect, and create your own digital world—one circuit at a time.",
+  download: "/download",
+  releases: "https://github.com/Xenthera/LogicPlanetReleases/releases/",
 } as const;

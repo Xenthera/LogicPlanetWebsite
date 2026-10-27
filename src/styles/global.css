@@ -53,37 +53,188 @@
   --font-sans: Outfit, ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --color-bg: #070b12;
-  --color-raised: #101826;
-  --color-ink: #f4f1ea;
-  --color-muted: #c5cedc;
-  --color-faint: #9aa6ba;
-  --color-line: rgba(244, 241, 234, 0.14);
+  --color-bg: #121a27;
+  --color-raised: #172131;
+  --color-tint: #1f2a3c;
+  --color-ink: #eef2f7;
+  --color-muted: #a9b4c5;
+  --color-faint: #8794a8;
+  --color-line: rgba(238, 242, 247, 0.09);
+  --color-line-strong: rgba(238, 242, 247, 0.2);
+  --color-accent: #f5c96b;
+  --color-accent-bright: #ffe4a8;
   --color-gold: #f5c96b;
-  --color-gold-ink: #1c1408;
+
+  --radius-media: 14px;
+  --radius-control: 8px;
+
+  --shadow-media: 0 1px 0 rgba(238, 242, 247, 0.05) inset, 0 30px 60px -28px rgba(0, 0, 0, 0.6);
+
+  /* Dense side-by-side sections start here. Tablets, including iPad Mini, stay below it. */
+  --breakpoint-wide: 75rem;
 }
 
+/* The board is a CSS background so it scrolls on the compositor. Pulses are drawn in
+   document coordinates on an absolute canvas, which scrolls with this image. */
 html {
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  background-image: url("../assets/circuit/board.svg");
+  background-position: 0 0;
+  background-repeat: repeat;
   color: var(--color-ink);
   font-family: var(--font-sans);
+  overflow-x: clip;
+  scrollbar-gutter: stable;
+}
+
+html:has(dialog[open]) {
+  overflow: hidden;
 }
 
 body {
+  position: relative;
   margin: 0;
   min-height: 100vh;
-  background: var(--color-bg);
   color: var(--color-ink);
+  overflow-x: clip;
+}
+
+.shell {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .shell {
+    padding-inline: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    padding-inline: 3rem;
+  }
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  font-size: clamp(3.75rem, 8.5vw, 7.25rem);
+}
+
+.hero-copy {
+  flex: 1 1 14rem;
+  max-width: 24rem;
+  min-width: min(100%, 14rem);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+}
+
+.feature-panel {
+  --feature-radius: calc(var(--radius-media) + 6px);
+  position: relative;
+  border-radius: var(--feature-radius);
+  padding: 1.25rem;
+}
+
+.feature-panel::before,
+.feature-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Straight runs. The corner squares are cut out so the curve can be yellow. */
+.feature-panel::before {
+  border: 1px solid var(--color-line);
+  mask-image:
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0);
+  mask-position: 0 0, 0 0, 100% 0, 0 100%, 100% 100%;
+  mask-size:
+    100% 100%,
+    var(--feature-radius) var(--feature-radius),
+    var(--feature-radius) var(--feature-radius),
+    var(--feature-radius) var(--feature-radius),
+    var(--feature-radius) var(--feature-radius);
+  mask-repeat: no-repeat;
+  mask-composite: subtract, subtract, subtract, subtract;
+}
+
+.feature-panel::after {
+  border: 2px solid var(--color-accent);
+  mask-image:
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0);
+  mask-position: 0 0, 100% 0, 0 100%, 100% 100%;
+  mask-size: var(--feature-radius) var(--feature-radius);
+  mask-repeat: no-repeat;
+}
+
+@media (min-width: 768px) {
+  .feature-panel {
+    padding: 1.5rem;
+  }
+}
+
+.section-label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  color: var(--color-accent);
+}
+
+/* Tablet band: iPad Mini through iPad Pro portrait and landscape.
+   Type steps down, and the side-by-side feature grids stay off until 1200px. */
+@media (min-width: 700px) and (max-width: 74.99rem) {
+  .hero-title {
+    font-size: clamp(3rem, 5.5vw, 4.75rem);
+  }
+
+  .section-title {
+    font-size: clamp(1.75rem, 2.6vw, 2.25rem);
+  }
+
+  .section-label {
+    font-size: clamp(1.6rem, 2.4vw, 2rem);
+  }
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-faint);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline: 2px solid var(--color-accent);
   outline-offset: 3px;
 }
 
 ::selection {
   background: var(--color-gold);
-  color: var(--color-gold-ink);
+  color: var(--color-bg);
 }
 
 summary {
@@ -126,7 +277,7 @@ summary::-webkit-details-marker {
 }
 
 .article a {
-  color: var(--color-gold);
+  color: var(--color-accent);
   text-underline-offset: 0.2em;
 }
 
@@ -138,7 +289,7 @@ summary::-webkit-details-marker {
 .article img {
   width: 100%;
   height: auto;
-  border: 1px solid var(--color-line);
+  border-radius: var(--radius-media);
 }
 
 .article code {
@@ -152,6 +303,7 @@ summary::-webkit-details-marker {
   padding: 1rem;
   background: var(--color-raised);
   border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
 }
 
 .article pre code {
