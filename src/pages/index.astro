@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import Button from "../components/Button.astro";
-import Media from "../components/Media.astro";
+import Mosaic from "../components/Mosaic.astro";
 import FeatureText from "../components/FeatureText.astro";
 import FeatureFrames from "../components/FeatureFrames.astro";
 import FeatureMore from "../components/FeatureMore.astro";
@@ -10,11 +10,11 @@ import { site } from "../data/site";
 import { loadMore } from "../lib/more";
 import { loadFeatures } from "../lib/features";
 import { loadGameplay } from "../lib/gameplay";
-import { getGallery } from "../lib/content";
+import { loadGallery } from "../lib/gallery";
 import { withBase } from "../lib/paths";
 import AstroPlanet from "../components/AstroPlanet.astro";
 
-const shots = (await getGallery()).filter((item) => item.data.featured).slice(0, 3);
+const shots = (await loadGallery()).slice(0, 6);
 const features = loadFeatures();
 const more = loadMore();
 const heroSlides = loadGameplay();
@@ -138,23 +138,9 @@ const heroSlides = loadGameplay();
               All screenshots
             </a>
           </div>
-          <ul class="mt-8 grid list-none gap-4 p-0 sm:gap-5 md:grid-cols-12">
-            {shots.map((shot, index) => (
-              <li class:list={[index === 0 ? "md:col-span-8 md:row-span-2" : "md:col-span-4"]}>
-                <Media
-                  src={shot.data.image}
-                  alt={shot.data.alt}
-                  label={shot.data.title}
-                  group="home-gallery"
-                  title={shot.data.title}
-                  category={shot.data.category}
-                  caption={shot.data.description}
-                  ratio={index === 0 ? "aspect-[4/3] md:aspect-auto md:h-full" : "aspect-[4/3]"}
-                  class="transition-shadow hover:shadow-[var(--shadow-media)]"
-                />
-              </li>
-            ))}
-          </ul>
+          <div class="mt-8">
+            <Mosaic items={shots} group="home-gallery" />
+          </div>
         </div>
       </section>
     )

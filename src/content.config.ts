@@ -18,20 +18,12 @@ const blog = defineCollection({
 
 const gallery = defineCollection({
   loader: glob({ pattern: "**/*.md", base: "./src/content/gallery" }),
-  schema: z
-    .object({
-      title: z.string(),
-      description: z.string().optional(),
-      image: z.string().optional(),
-      alt: z.string().optional(),
-      category: z.string().optional(),
-      order: z.number().int(),
-      featured: z.boolean().default(false),
-    })
-    .refine((data) => !data.image || Boolean(data.alt), {
-      message: "A gallery entry with an image needs alt text.",
-      path: ["alt"],
-    }),
+  schema: z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    alt: z.string().optional(),
+    category: z.string().optional(),
+  }),
 });
 
 export const collections = { blog, gallery };

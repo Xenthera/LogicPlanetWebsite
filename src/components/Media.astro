@@ -8,6 +8,8 @@ interface Props {
   label?: string;
   /** Tailwind aspect class, for example "aspect-video". */
   ratio?: string;
+  /** Fill a parent that already has the picture's size. */
+  fill?: boolean;
   eager?: boolean;
   class?: string;
   /** Opens the frame in the lightbox when clicked. */
@@ -24,6 +26,7 @@ const {
   alt = "",
   label = "Image",
   ratio = "aspect-[16/10]",
+  fill = false,
   eager = false,
   class: className,
   expand = true,
@@ -39,7 +42,7 @@ const url = src ? withBase(src) : undefined;
 <div
   class:list={[
     "media-frame group/media relative overflow-hidden rounded-[var(--radius-media)] bg-tint",
-    ratio,
+    fill ? "h-full w-full" : ratio,
     className,
   ]}
 >

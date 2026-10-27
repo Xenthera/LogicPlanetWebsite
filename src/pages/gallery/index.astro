@@ -1,9 +1,9 @@
 ---
 import Base from "../../layouts/Base.astro";
-import Media from "../../components/Media.astro";
-import { getGallery } from "../../lib/content";
+import Mosaic from "../../components/Mosaic.astro";
+import { loadGallery } from "../../lib/gallery";
 
-const items = await getGallery();
+const items = await loadGallery();
 ---
 
 <Base title="Gallery" description="Screenshots from Logic Planet.">
@@ -14,29 +14,9 @@ const items = await getGallery();
       items.length === 0 ? (
         <p class="mt-10 text-muted">No screenshots yet.</p>
       ) : (
-        <ul class="mt-12 grid list-none gap-x-5 gap-y-10 p-0 sm:grid-cols-2">
-          {items.map((item, index) => (
-            <li class:list={[index % 3 === 0 && "sm:col-span-2"]}>
-              <Media
-                src={item.data.image}
-                alt={item.data.alt}
-                label={item.data.title}
-                group="gallery"
-                title={item.data.title}
-                category={item.data.category}
-                caption={item.data.description}
-                ratio={index % 3 === 0 ? "aspect-[4/3] sm:aspect-video" : "aspect-[4/3]"}
-                class="transition-shadow hover:shadow-[var(--shadow-media)]"
-              />
-              {item.data.image && (
-                <p class="mt-4 text-[0.9375rem] text-ink">
-                  {item.data.title}
-                  {item.data.category && <span class="ml-2 text-faint">{item.data.category}</span>}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
+        <div class="mt-10">
+          <Mosaic items={items} group="gallery" />
+        </div>
       )
     }
   </section>

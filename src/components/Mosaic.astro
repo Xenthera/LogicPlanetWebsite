@@ -1,0 +1,100 @@
+---
+import Media from "./Media.astro";
+import type { GalleryShot } from "../lib/gallery";
+
+interface Props {
+  items: GalleryShot[];
+  group: string;
+}
+
+const { items, group } = Astro.props;
+---
+
+<ul class="mosaic" data-mosaic>
+  {
+    items.map((item, index) => (
+      <li
+        class="tile"
+        data-tile
+        data-aspect={item.width / item.height}
+        style={`--aspect: ${item.width / item.height}; aspect-ratio: ${item.width} / ${item.height}`}
+      >
+        <Media
+          src={item.src}
+          alt={item.alt}
+          label={item.title}
+          fill
+          eager={index < 2}
+          group={group}
+          title={item.title}
+          category={item.category}
+          caption={item.description}
+          class="transition-shadow hover:shadow-[var(--shadow-media)]"
+        />
+      </li>
+    ))
+  }
+</ul>
+
+<script>
+  import { idealRowHeight, packRows } from "../lib/mosaic-pack";
+
+  function layout(root: HTMLElement) {
+    const tiles = [...root.querySelectorAll<HTMLElement>("[data-tile]")];
+    if (!tiles.length) return;
+    const width = root.clientWidth;
+    if (width < 32) return;
+    const gap = parseFloat(getComputedStyle(root).columnGap) || 0;
+    const aspects = tiles.map((tile) => Number(tile.dataset.aspect) || 1);
+    const rows = packRows(aspects, width, gap, idealRowHeight(width));
+    let index = 0;
+    for (const row of rows) {
+      for (const tile of row.tiles) {
+        const element = tiles[index++];
+        if (!element) return;
+        element.style.flex = `0 0 ${tile.width}px`;
+        element.style.width = `${tile.width}px`;
+        element.style.height = `${tile.height}px`;
+        element.style.minWidth = "0";
+        element.style.aspectRatio = "auto";
+      }
+    }
+  }
+
+  function mount(root: HTMLElement) {
+    let frame = 0;
+    const run = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => layout(root));
+    };
+    run();
+    const observer = new ResizeObserver(run);
+    observer.observe(root);
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-mosaic]")) mount(root);
+</script>
+
+<style>
+  .mosaic {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 640px) {
+    .mosaic {
+      gap: 1.25rem;
+    }
+  }
+
+  .tile {
+    flex: var(--aspect) 1 calc(var(--aspect) * 10rem);
+    min-width: min(100%, 8rem);
+    max-width: 100%;
+  }
+</style>

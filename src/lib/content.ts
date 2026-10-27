@@ -8,7 +8,3 @@ export async function getPosts(): Promise<CollectionEntry<"blog">[]> {
   return posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 }
 
-export async function getGallery(): Promise<CollectionEntry<"gallery">[]> {
-  const items = await getCollection("gallery");
-  return items.sort((a, b) => a.data.order - b.data.order);
-}
