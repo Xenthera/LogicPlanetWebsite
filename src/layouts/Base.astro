@@ -38,8 +38,9 @@ const imageUrl = new URL(withBase(image), Astro.site ?? Astro.url);
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" type="image/svg+xml" href={withBase("/favicon.svg")} />
-    <link rel="icon" href={withBase("/favicon.ico")} />
+    <link rel="icon" type="image/svg+xml" href={withBase("/favicon.svg?v=2")} />
+    <link rel="icon" type="image/png" href={withBase("/favicon.png?v=2")} />
+    <link rel="icon" href={withBase("/favicon.ico?v=2")} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
